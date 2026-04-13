@@ -1,0 +1,37 @@
+"use client";
+
+import { useState } from "react";
+import Image from "next/image";
+import AnimatedText from "@/components/about/AnimatedText";
+
+export default function StoryHero() {
+  const [loaded, setLoaded] = useState(false);
+
+  return (
+    <section id="story-hero" className="story-hero" aria-label="Our Story Hero">
+      {!loaded ? <div className="story-hero-skeleton" aria-hidden="true" /> : null}
+
+      <Image
+        src="https://images.unsplash.com/photo-1473341304170-971dccb5ac1e?auto=format&fit=crop&w=2000&q=80"
+        alt="Field operations and modern infrastructure"
+        fill
+        priority
+        sizes="100vw"
+        className="story-hero-image"
+        onLoad={() => setLoaded(true)}
+      />
+
+      <div className="story-hero-overlay" />
+      <div className="story-container">
+        <AnimatedText className="story-hero-copy">
+          <p className="story-eyebrow">Our Story</p>
+          <h1>Rooted in Experience. Growing with Technology.</h1>
+          <p>
+            Mysarah Modern Tech Private Limited began with real field operations in Assam and is now evolving into a
+            digitally enabled multi-sector platform built for long-term impact.
+          </p>
+        </AnimatedText>
+      </div>
+    </section>
+  );
+}

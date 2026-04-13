@@ -1,0 +1,32 @@
+"use client";
+
+import { useState } from "react";
+import { AnimatePresence, motion, useReducedMotion, useScroll } from "framer-motion";
+import { useMotionValueEvent } from "framer-motion";
+
+export default function StoryBackToTop() {
+  const reduceMotion = useReducedMotion();
+  const { scrollY } = useScroll();
+  const [visible, setVisible] = useState(false);
+
+  useMotionValueEvent(scrollY, "change", (latest) => {
+    setVisible(latest > 900);
+  });
+
+  return (
+    <AnimatePresence>
+      {visible ? (
+        <motion.a
+          href="#story-hero"
+          className="story-back-top"
+          initial={{ opacity: 0, y: reduceMotion ? 0 : 14 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: reduceMotion ? 0 : 10 }}
+          transition={{ duration: reduceMotion ? 0.2 : 0.28 }}
+        >
+          Back to top
+        </motion.a>
+      ) : null}
+    </AnimatePresence>
+  );
+}
