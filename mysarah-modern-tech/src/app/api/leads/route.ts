@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server";
 import { createLead } from "@/lib/lead-service";
 import { sendLeadEmail } from "@/lib/mailer";
-import { leadSchema } from "@/lib/validation";
+import { formatZodErrors, leadSchema } from "@/lib/validation";
 import { rejectCrossSiteRequest } from "@/lib/security";
+import { parseJsonRequest } from "@/lib/api";
 
 const ipHits = new Map<string, { count: number; time: number }>();
 
@@ -32,11 +33,20 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Too many requests. Please try again shortly." }, { status: 429 });
     }
 
-    const body = await request.json();
+    const parsedBody = await parseJsonRequest<unknown>(request);
+    if (!parsedBody.ok) {
+      return parsedBody.response;
+    }
+
+    const body = parsedBody.data;
     const parsed = leadSchema.safeParse(body);
 
     if (!parsed.success) {
-      return NextResponse.json({ error: "Invalid request data." }, { status: 400 });
+      const validation = formatZodErrors(parsed.error);
+      return NextResponse.json(
+        { error: validation.message, fieldErrors: validation.fieldErrors },
+        { status: 400 },
+      );
     }
 
     const lead = await createLead(parsed.data);

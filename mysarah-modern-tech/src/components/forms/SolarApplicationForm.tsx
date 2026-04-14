@@ -2,6 +2,7 @@
 
 import { FormEvent, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
+import StatusPopup from "@/components/shared/StatusPopup";
 
 interface SolarFormData {
   firstName: string;
@@ -49,7 +50,7 @@ export default function SolarApplicationForm() {
   const [loading, setLoading] = useState(false);
   const [gpsLoading, setGpsLoading] = useState(false);
   const [gpsStatus, setGpsStatus] = useState("");
-  const [result, setResult] = useState("");
+  const [notice, setNotice] = useState<{ message: string; tone: "success" | "error" } | null>(null);
 
   const isDisabled = useMemo(() => {
     return !form.firstName || !form.lastName || !form.phone || !form.addressLine || !form.city || !form.pincode;
@@ -96,7 +97,7 @@ export default function SolarApplicationForm() {
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    setResult("");
+    setNotice(null);
     setLoading(true);
 
     const payload = {
@@ -130,14 +131,18 @@ export default function SolarApplicationForm() {
       const data = await response.json();
 
       if (!response.ok) {
-        setResult(data.error || t("Unable to submit the application right now."));
+        const fieldMessages = data.fieldErrors ? Object.values(data.fieldErrors).flat().join(" ") : "";
+        setNotice({
+          message: [data.error || t("Unable to submit the application right now."), fieldMessages].filter(Boolean).join(" "),
+          tone: "error",
+        });
       } else {
-        setResult(t("Application submitted successfully. Our team will review and contact you."));
+        setNotice({ message: t("Application submitted successfully. Our team will review and contact you."), tone: "success" });
         setForm(initialForm);
         setGpsStatus("");
       }
     } catch {
-      setResult(t("Network issue while submitting. Please try again."));
+      setNotice({ message: t("Network issue while submitting. Please try again."), tone: "error" });
     } finally {
       setLoading(false);
     }
@@ -145,6 +150,7 @@ export default function SolarApplicationForm() {
 
   return (
     <article className="solar-form-shell">
+      {notice ? <StatusPopup message={notice.message} tone={notice.tone} onClose={() => setNotice(null)} /> : null}
       <div className="solar-form-topbar">
         <div>
           <p className="solar-form-kicker">{t("Digital Intake")}</p>
@@ -161,6 +167,8 @@ export default function SolarApplicationForm() {
             value={form.firstName}
             onChange={(event) => setForm((prev) => ({ ...prev, firstName: event.target.value }))}
             placeholder={t("Your given name")}
+            minLength={2}
+            maxLength={40}
             required
             autoComplete="given-name"
           />
@@ -173,6 +181,8 @@ export default function SolarApplicationForm() {
             value={form.lastName}
             onChange={(event) => setForm((prev) => ({ ...prev, lastName: event.target.value }))}
             placeholder={t("Your surname")}
+            minLength={2}
+            maxLength={40}
             required
             autoComplete="family-name"
           />
@@ -185,6 +195,9 @@ export default function SolarApplicationForm() {
             value={form.phone}
             onChange={(event) => setForm((prev) => ({ ...prev, phone: event.target.value }))}
             placeholder={t("10-digit mobile number")}
+            minLength={7}
+            maxLength={20}
+            pattern="[0-9+\- ()]{7,20}"
             required
             autoComplete="tel"
           />
@@ -208,6 +221,8 @@ export default function SolarApplicationForm() {
             value={form.addressLine}
             onChange={(event) => setForm((prev) => ({ ...prev, addressLine: event.target.value }))}
             placeholder={t("Street address or building name")}
+            minLength={2}
+            maxLength={120}
             required
             autoComplete="street-address"
           />
@@ -220,6 +235,8 @@ export default function SolarApplicationForm() {
             value={form.city}
             onChange={(event) => setForm((prev) => ({ ...prev, city: event.target.value }))}
             placeholder={t("City or town")}
+            minLength={2}
+            maxLength={80}
             required
             autoComplete="address-level2"
           />
@@ -232,6 +249,8 @@ export default function SolarApplicationForm() {
             value={form.state}
             onChange={(event) => setForm((prev) => ({ ...prev, state: event.target.value }))}
             placeholder={t("State or province")}
+            minLength={2}
+            maxLength={80}
             autoComplete="address-level1"
           />
         </label>
@@ -243,6 +262,8 @@ export default function SolarApplicationForm() {
             value={form.pincode}
             onChange={(event) => setForm((prev) => ({ ...prev, pincode: event.target.value }))}
             placeholder={t("6-digit postal code")}
+            minLength={4}
+            maxLength={10}
             required
             autoComplete="postal-code"
           />
@@ -288,6 +309,7 @@ export default function SolarApplicationForm() {
           <input
             type="number"
             min="0"
+            max="999999"
             value={form.monthlyBill}
             onChange={(event) => setForm((prev) => ({ ...prev, monthlyBill: event.target.value }))}
             placeholder={t("e.g. 4500")}
@@ -300,6 +322,7 @@ export default function SolarApplicationForm() {
             type="number"
             min="0"
             step="0.1"
+            max="999999"
             value={form.sanctionedLoad}
             onChange={(event) => setForm((prev) => ({ ...prev, sanctionedLoad: event.target.value }))}
             placeholder={t("e.g. 5")}
@@ -312,6 +335,7 @@ export default function SolarApplicationForm() {
             type="number"
             min="0"
             step="0.1"
+            max="999999"
             value={form.desiredCapacity}
             onChange={(event) => setForm((prev) => ({ ...prev, desiredCapacity: event.target.value }))}
             placeholder={t("e.g. 3")}
@@ -381,6 +405,7 @@ export default function SolarApplicationForm() {
             value={form.notes}
             onChange={(event) => setForm((prev) => ({ ...prev, notes: event.target.value }))}
             placeholder={t("Any roof condition, shading, access notes, or preferred call time")}
+            maxLength={1200}
           />
         </label>
 
@@ -388,7 +413,6 @@ export default function SolarApplicationForm() {
           <button type="submit" className="button" disabled={loading || isDisabled}>
             {loading ? t("Submitting Application...") : t("Submit Digital Application")}
           </button>
-          {result ? <p className="form-feedback">{result}</p> : null}
         </div>
       </form>
     </article>

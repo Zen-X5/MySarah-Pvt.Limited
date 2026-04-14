@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { adminLoginSchema } from "@/lib/validation";
 import { authCookie, createAdminToken, verifyAdminCredentials } from "@/lib/auth";
 import { clearLoginRateLimit, getClientIp, isLoginRateLimited, rejectCrossSiteRequest } from "@/lib/security";
+import { formatZodErrors } from "@/lib/validation";
+import { parseJsonRequest } from "@/lib/api";
 
 export async function POST(request: Request) {
   const blocked = rejectCrossSiteRequest(request);
@@ -15,11 +17,20 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Too many login attempts. Try again later." }, { status: 429 });
     }
 
-    const body = await request.json();
+    const parsedBody = await parseJsonRequest<unknown>(request);
+    if (!parsedBody.ok) {
+      return parsedBody.response;
+    }
+
+    const body = parsedBody.data;
     const parsed = adminLoginSchema.safeParse(body);
 
     if (!parsed.success) {
-      return NextResponse.json({ error: "Invalid credentials format." }, { status: 400 });
+      const validation = formatZodErrors(parsed.error);
+      return NextResponse.json(
+        { error: validation.message, fieldErrors: validation.fieldErrors },
+        { status: 400 },
+      );
     }
 
     const { username, password } = parsed.data;

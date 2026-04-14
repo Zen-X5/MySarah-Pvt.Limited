@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server";
 import { deleteLead, updateLeadProgress } from "@/lib/lead-service";
 import { getAdminSession } from "@/lib/auth";
-import { updateLeadStatusSchema } from "@/lib/validation";
+import { formatZodErrors, updateLeadStatusSchema } from "@/lib/validation";
 import { rejectCrossSiteRequest } from "@/lib/security";
+import { parseJsonRequest } from "@/lib/api";
 
 interface LeadParams {
   params: Promise<{ id: string }>;
@@ -21,11 +22,20 @@ export async function PATCH(request: Request, { params }: LeadParams) {
   }
 
   try {
-    const body = await request.json();
+    const parsedBody = await parseJsonRequest<unknown>(request);
+    if (!parsedBody.ok) {
+      return parsedBody.response;
+    }
+
+    const body = parsedBody.data;
     const parsed = updateLeadStatusSchema.safeParse(body);
 
     if (!parsed.success) {
-      return NextResponse.json({ error: "Invalid update payload." }, { status: 400 });
+      const validation = formatZodErrors(parsed.error);
+      return NextResponse.json(
+        { error: validation.message, fieldErrors: validation.fieldErrors },
+        { status: 400 },
+      );
     }
 
     const { id } = await params;

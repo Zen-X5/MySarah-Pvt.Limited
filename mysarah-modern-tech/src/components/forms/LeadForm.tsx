@@ -2,6 +2,7 @@
 
 import { FormEvent, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
+import StatusPopup from "@/components/shared/StatusPopup";
 
 type LeadType = "quote" | "contact" | "order";
 
@@ -30,7 +31,7 @@ export default function LeadForm({ variant, title }: LeadFormProps) {
   const { t } = useTranslation();
   const [form, setForm] = useState<FormData>({ ...initialForm, type: variant ?? "quote" });
   const [loading, setLoading] = useState(false);
-  const [result, setResult] = useState<string>("");
+  const [notice, setNotice] = useState<{ message: string; tone: "success" | "error" } | null>(null);
 
   const formTitle = title || t("Get in touch");
 
@@ -41,7 +42,7 @@ export default function LeadForm({ variant, title }: LeadFormProps) {
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setLoading(true);
-    setResult("");
+    setNotice(null);
 
     try {
       const response = await fetch("/api/leads", {
@@ -53,13 +54,17 @@ export default function LeadForm({ variant, title }: LeadFormProps) {
       const payload = await response.json();
 
       if (!response.ok) {
-        setResult(payload.error || t("Unable to submit request."));
+        const fieldMessages = payload.fieldErrors ? Object.values(payload.fieldErrors).flat().join(" ") : "";
+        setNotice({
+          message: [payload.error || t("Unable to submit request."), fieldMessages].filter(Boolean).join(" "),
+          tone: "error",
+        });
       } else {
-        setResult(t("Thank you. Our team will contact you shortly."));
+        setNotice({ message: t("Thank you. Our team will contact you shortly."), tone: "success" });
         setForm({ ...initialForm, type: variant ?? "quote" });
       }
     } catch {
-      setResult(t("Network issue. Please try again."));
+      setNotice({ message: t("Network issue. Please try again."), tone: "error" });
     } finally {
       setLoading(false);
     }
@@ -67,6 +72,7 @@ export default function LeadForm({ variant, title }: LeadFormProps) {
 
   return (
     <div className="lead-form-wrap">
+      {notice ? <StatusPopup message={notice.message} tone={notice.tone} onClose={() => setNotice(null)} /> : null}
       <h3>{formTitle}</h3>
       <form className="lead-form" onSubmit={handleSubmit}>
         <label>
@@ -76,6 +82,8 @@ export default function LeadForm({ variant, title }: LeadFormProps) {
             value={form.name}
             onChange={(event) => setForm((prev) => ({ ...prev, name: event.target.value }))}
             placeholder={t("Your full name")}
+            minLength={2}
+            maxLength={80}
             required
             autoComplete="name"
           />
@@ -88,6 +96,9 @@ export default function LeadForm({ variant, title }: LeadFormProps) {
             value={form.phone}
             onChange={(event) => setForm((prev) => ({ ...prev, phone: event.target.value }))}
             placeholder={t("10-digit mobile number")}
+            minLength={7}
+            maxLength={20}
+            pattern="[0-9+\- ()]{7,20}"
             required
             autoComplete="tel"
           />
@@ -100,6 +111,8 @@ export default function LeadForm({ variant, title }: LeadFormProps) {
             value={form.location}
             onChange={(event) => setForm((prev) => ({ ...prev, location: event.target.value }))}
             placeholder={t("City, District, or Address")}
+            minLength={2}
+            maxLength={120}
             required
             autoComplete="street-address"
           />
@@ -125,6 +138,8 @@ export default function LeadForm({ variant, title }: LeadFormProps) {
             value={form.message}
             onChange={(event) => setForm((prev) => ({ ...prev, message: event.target.value }))}
             placeholder={t("Tell us about your project...")}
+            minLength={10}
+            maxLength={1200}
             required
           />
         </label>
@@ -132,7 +147,6 @@ export default function LeadForm({ variant, title }: LeadFormProps) {
         <button type="submit" className="button" disabled={loading || disabled}>
           {loading ? t("Submitting...") : t("Submit")}
         </button>
-        {result ? <p className="form-feedback">{result}</p> : null}
       </form>
     </div>
   );

@@ -2,11 +2,13 @@
 
 import { useEffect, useState } from "react";
 import type { LeadProgressUpdate, LeadRecord } from "@/types/lead";
+import StatusPopup from "@/components/shared/StatusPopup";
 
 export default function AdminLeadsTable() {
   const [leads, setLeads] = useState<LeadRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [notice, setNotice] = useState<{ message: string; tone: "success" | "error" } | null>(null);
   const [selected, setSelected] = useState<LeadRecord | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<"all" | LeadRecord["status"]>("all");
@@ -19,7 +21,8 @@ export default function AdminLeadsTable() {
       const response = await fetch("/api/admin/leads", { method: "GET", cache: "no-store" });
       const data = await response.json();
       if (!response.ok) {
-        setError(data.error || "Unable to fetch leads.");
+        const fieldMessages = data.fieldErrors ? Object.values(data.fieldErrors).flat().join(" ") : "";
+        setError([data.error || "Unable to fetch leads.", fieldMessages].filter(Boolean).join(" "));
         return;
       }
       setLeads(data.data || []);
@@ -61,17 +64,52 @@ export default function AdminLeadsTable() {
   });
 
   async function updateLead(id: string, payload: LeadProgressUpdate) {
-    await fetch(`/api/admin/leads/${id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    });
-    loadLeads();
+    setNotice(null);
+    try {
+      const response = await fetch(`/api/admin/leads/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        const fieldMessages = data.fieldErrors ? Object.values(data.fieldErrors).flat().join(" ") : "";
+        setNotice({
+          message: [data.error || "Unable to update lead.", fieldMessages].filter(Boolean).join(" "),
+          tone: "error",
+        });
+        return;
+      }
+
+      await loadLeads();
+      setNotice({ message: "Lead updated successfully.", tone: "success" });
+    } catch {
+      setNotice({ message: "Unable to update lead.", tone: "error" });
+    }
   }
 
   async function removeLead(id: string) {
-    await fetch(`/api/admin/leads/${id}`, { method: "DELETE" });
-    loadLeads();
+    setNotice(null);
+    try {
+      const response = await fetch(`/api/admin/leads/${id}`, { method: "DELETE" });
+      const data = await response.json();
+
+      if (!response.ok) {
+        const fieldMessages = data.fieldErrors ? Object.values(data.fieldErrors).flat().join(" ") : "";
+        setNotice({
+          message: [data.error || "Unable to delete lead.", fieldMessages].filter(Boolean).join(" "),
+          tone: "error",
+        });
+        return;
+      }
+
+      await loadLeads();
+      setNotice({ message: "Lead deleted successfully.", tone: "success" });
+    } catch {
+      setNotice({ message: "Unable to delete lead.", tone: "error" });
+    }
   }
 
   if (loading) {
@@ -88,6 +126,7 @@ export default function AdminLeadsTable() {
 
   return (
     <>
+      {notice ? <StatusPopup message={notice.message} tone={notice.tone} onClose={() => setNotice(null)} /> : null}
       <section className="admin-kpi-grid" aria-label="Lead overview">
         <article className="admin-kpi-card">
           <p>Total Leads</p>
