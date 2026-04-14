@@ -2,18 +2,19 @@
 
 import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
+import StatusPopup from "@/components/shared/StatusPopup";
 
 export default function AdminLoginPage() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
+  const [notice, setNotice] = useState<{ message: string; tone: "success" | "error" } | null>(null);
   const [loading, setLoading] = useState(false);
   const router = useRouter();
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setLoading(true);
-    setError("");
+    setNotice(null);
 
     try {
       const response = await fetch("/api/admin/login", {
@@ -25,13 +26,18 @@ export default function AdminLoginPage() {
       const data = await response.json();
 
       if (!response.ok) {
-        setError(data.error || "Login failed.");
+        const fieldMessages = data.fieldErrors ? Object.values(data.fieldErrors).flat().join(" ") : "";
+        setNotice({
+          message: [data.error || "Login failed.", fieldMessages].filter(Boolean).join(" "),
+          tone: "error",
+        });
       } else {
+        setNotice({ message: "Login successful. Redirecting...", tone: "success" });
         router.push("/admin");
         router.refresh();
       }
     } catch {
-      setError("Unable to login.");
+      setNotice({ message: "Unable to login.", tone: "error" });
     } finally {
       setLoading(false);
     }
@@ -40,20 +46,20 @@ export default function AdminLoginPage() {
   return (
     <main className="section container auth-wrap">
       <div className="content-card auth-card">
+        {notice ? <StatusPopup message={notice.message} tone={notice.tone} onClose={() => setNotice(null)} /> : null}
         <h1>Admin Login</h1>
         <form className="lead-form" onSubmit={onSubmit}>
           <label>
             Username
-            <input type="text" value={username} onChange={(e) => setUsername(e.target.value)} required />
+            <input type="text" value={username} onChange={(e) => setUsername(e.target.value)} required minLength={3} maxLength={40} autoComplete="username" />
           </label>
           <label>
             Password
-            <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
+            <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required minLength={6} maxLength={200} autoComplete="current-password" />
           </label>
           <button type="submit" className="button" disabled={loading}>
             {loading ? "Signing in..." : "Sign In"}
           </button>
-          {error ? <p className="form-feedback">{error}</p> : null}
         </form>
       </div>
     </main>
