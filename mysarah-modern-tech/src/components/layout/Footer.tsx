@@ -27,6 +27,12 @@ export default function Footer() {
             <li>
               <Link href="/contact">{t("Contact")}</Link>
             </li>
+            <li>
+              <Link href="/privacy">{t("Privacy Notice")}</Link>
+            </li>
+            <li>
+              <Link href="/terms">{t("Terms of Service")}</Link>
+            </li>
           </ul>
         </div>
         <div>
