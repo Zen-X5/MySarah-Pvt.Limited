@@ -1,6 +1,7 @@
 import type { NextConfig } from "next";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { solarCities } from "./src/lib/solar-seo";
 
 const configDir = path.dirname(fileURLToPath(import.meta.url));
 const allowedDevOriginsFromEnv = (process.env.NEXT_DEV_ALLOWED_ORIGINS || "")
@@ -26,6 +27,13 @@ const nextConfig: NextConfig = {
   ],
   turbopack: {
     root: configDir,
+  },
+  async redirects() {
+    return solarCities.map((city) => ({
+      source: `/solar-installation-${city}`,
+      destination: `/solar-installation/${city}`,
+      permanent: true,
+    }));
   },
 };
 

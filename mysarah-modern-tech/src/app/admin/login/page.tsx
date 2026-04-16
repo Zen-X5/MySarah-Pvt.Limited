@@ -2,9 +2,11 @@
 
 import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslation } from "react-i18next";
 import StatusPopup from "@/components/shared/StatusPopup";
 
 export default function AdminLoginPage() {
+  const { t } = useTranslation();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [notice, setNotice] = useState<{ message: string; tone: "success" | "error" } | null>(null);
@@ -28,16 +30,16 @@ export default function AdminLoginPage() {
       if (!response.ok) {
         const fieldMessages = data.fieldErrors ? Object.values(data.fieldErrors).flat().join(" ") : "";
         setNotice({
-          message: [data.error || "Login failed.", fieldMessages].filter(Boolean).join(" "),
+          message: [data.error || t("admin.login.failed"), fieldMessages].filter(Boolean).join(" "),
           tone: "error",
         });
       } else {
-        setNotice({ message: "Login successful. Redirecting...", tone: "success" });
+        setNotice({ message: t("admin.login.successRedirecting"), tone: "success" });
         router.push("/admin");
         router.refresh();
       }
     } catch {
-      setNotice({ message: "Unable to login.", tone: "error" });
+      setNotice({ message: t("admin.login.unable"), tone: "error" });
     } finally {
       setLoading(false);
     }
@@ -47,18 +49,18 @@ export default function AdminLoginPage() {
     <main className="section container auth-wrap">
       <div className="content-card auth-card">
         {notice ? <StatusPopup message={notice.message} tone={notice.tone} onClose={() => setNotice(null)} /> : null}
-        <h1>Admin Login</h1>
+        <h1>{t("admin.login.title")}</h1>
         <form className="lead-form" onSubmit={onSubmit}>
           <label>
-            Username
+            {t("admin.login.username")}
             <input type="text" value={username} onChange={(e) => setUsername(e.target.value)} required minLength={3} maxLength={40} autoComplete="username" />
           </label>
           <label>
-            Password
+            {t("admin.login.password")}
             <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required minLength={6} maxLength={200} autoComplete="current-password" />
           </label>
           <button type="submit" className="button" disabled={loading}>
-            {loading ? "Signing in..." : "Sign In"}
+            {loading ? t("admin.login.signingIn") : t("admin.login.signIn")}
           </button>
         </form>
       </div>

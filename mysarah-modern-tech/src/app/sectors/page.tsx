@@ -9,27 +9,27 @@ import { useTranslation } from "react-i18next";
 const sectorGroups = [
   {
     key: "core-services",
-    title: "Core Services",
+    titleKey: "Core Services",
     slugs: ["solar", "electrical-services", "construction"],
   },
   {
     key: "business-industry",
-    title: "Commercial and Operational Sectors",
+    titleKey: "Commercial and operational sectors",
     slugs: ["manufacture", "export-import", "purchases-and-sales", "contract-field"],
   },
   {
     key: "lifestyle-public-services",
-    title: "Lifestyle and Public Services",
+    titleKey: "Public-facing sectors and community services",
     slugs: ["event-management", "tourism", "education", "health", "sports"],
   },
   {
     key: "technology-innovation",
-    title: "Technology and Innovation",
+    titleKey: "Digital growth and intelligence",
     slugs: ["it-field", "ai"],
   },
   {
     key: "agriculture",
-    title: "Agriculture",
+    titleKey: "Agriculture",
     slugs: ["agriculture"],
   },
 ];
@@ -61,12 +61,12 @@ export default function SectorsPage() {
                 <div className="sectors-group-banner">
                   <div className="sectors-group-banner-main">
                     <SectionHeading
-                      title={t(group.title)}
+                      title={t(group.titleKey)}
                       align="center"
                     />
                   </div>
 
-                  <aside className="sectors-group-meta" aria-label={`${t(group.title)} ${t("summary")}`}>
+                  <aside className="sectors-group-meta" aria-label={`${t(group.titleKey)} ${t("summary")}`}>
                     <strong>{group.slugs.length} {t("sectors")}</strong>
                     <p>{t("available")}</p>
                   </aside>

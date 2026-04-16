@@ -1,11 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import type { LeadProgressUpdate, LeadRecord } from "@/types/lead";
 import StatusPopup from "@/components/shared/StatusPopup";
 
 export default function AdminLeadsTable() {
+  const { t } = useTranslation();
   const [leads, setLeads] = useState<LeadRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -14,7 +16,7 @@ export default function AdminLeadsTable() {
   const [statusFilter, setStatusFilter] = useState<"all" | LeadRecord["status"]>("all");
   const [progressFilter, setProgressFilter] = useState<"all" | "visit-pending" | "visit-confirmed" | "installed">("all");
 
-  async function loadLeads() {
+  const loadLeads = useCallback(async () => {
     setLoading(true);
     setError("");
     try {
@@ -22,16 +24,16 @@ export default function AdminLeadsTable() {
       const data = await response.json();
       if (!response.ok) {
         const fieldMessages = data.fieldErrors ? Object.values(data.fieldErrors).flat().join(" ") : "";
-        setError([data.error || "Unable to fetch leads.", fieldMessages].filter(Boolean).join(" "));
+        setError([data.error || t("admin.leads.fetchError"), fieldMessages].filter(Boolean).join(" "));
         return;
       }
       setLeads(data.data || []);
     } catch {
-      setError("Unable to fetch leads.");
+      setError(t("admin.leads.fetchError"));
     } finally {
       setLoading(false);
     }
-  }
+  }, [t]);
 
   useEffect(() => {
     loadLeads();
@@ -77,16 +79,16 @@ export default function AdminLeadsTable() {
       if (!response.ok) {
         const fieldMessages = data.fieldErrors ? Object.values(data.fieldErrors).flat().join(" ") : "";
         setNotice({
-          message: [data.error || "Unable to update lead.", fieldMessages].filter(Boolean).join(" "),
+          message: [data.error || t("admin.leads.updateError"), fieldMessages].filter(Boolean).join(" "),
           tone: "error",
         });
         return;
       }
 
       await loadLeads();
-      setNotice({ message: "Lead updated successfully.", tone: "success" });
+      setNotice({ message: t("admin.leads.updated"), tone: "success" });
     } catch {
-      setNotice({ message: "Unable to update lead.", tone: "error" });
+      setNotice({ message: t("admin.leads.updateError"), tone: "error" });
     }
   }
 
@@ -99,21 +101,21 @@ export default function AdminLeadsTable() {
       if (!response.ok) {
         const fieldMessages = data.fieldErrors ? Object.values(data.fieldErrors).flat().join(" ") : "";
         setNotice({
-          message: [data.error || "Unable to delete lead.", fieldMessages].filter(Boolean).join(" "),
+          message: [data.error || t("admin.leads.deleteError"), fieldMessages].filter(Boolean).join(" "),
           tone: "error",
         });
         return;
       }
 
       await loadLeads();
-      setNotice({ message: "Lead deleted successfully.", tone: "success" });
+      setNotice({ message: t("admin.leads.deleted"), tone: "success" });
     } catch {
-      setNotice({ message: "Unable to delete lead.", tone: "error" });
+      setNotice({ message: t("admin.leads.deleteError"), tone: "error" });
     }
   }
 
   if (loading) {
-    return <p>Loading leads...</p>;
+    return <p>{t("admin.leads.loading")}</p>;
   }
 
   if (error) {
@@ -121,7 +123,7 @@ export default function AdminLeadsTable() {
   }
 
   if (leads.length === 0) {
-    return <p>No leads found yet.</p>;
+    return <p>{t("admin.leads.none")}</p>;
   }
 
   return (
@@ -129,60 +131,60 @@ export default function AdminLeadsTable() {
       {notice ? <StatusPopup message={notice.message} tone={notice.tone} onClose={() => setNotice(null)} /> : null}
       <section className="admin-kpi-grid" aria-label="Lead overview">
         <article className="admin-kpi-card">
-          <p>Total Leads</p>
+          <p>{t("admin.leads.kpi.total")}</p>
           <strong>{totals.all}</strong>
         </article>
         <article className="admin-kpi-card">
-          <p>Installations Done</p>
+          <p>{t("admin.leads.kpi.installed")}</p>
           <strong>{totals.installed}</strong>
         </article>
         <article className="admin-kpi-card">
-          <p>Visit Confirmed</p>
+          <p>{t("admin.leads.kpi.visitConfirmed")}</p>
           <strong>{totals.visitConfirmed}</strong>
         </article>
         <article className="admin-kpi-card">
-          <p>Open Pipeline</p>
+          <p>{t("admin.leads.kpi.openPipeline")}</p>
           <strong>{totals.openPipeline}</strong>
         </article>
       </section>
 
       <section className="admin-toolbar" aria-label="Lead filters">
         <label>
-          Search
+          {t("admin.leads.filter.search")}
           <input
             value={searchTerm}
             onChange={(event) => setSearchTerm(event.target.value)}
-            placeholder="Search by name, phone, or location"
+            placeholder={t("admin.leads.filter.searchPlaceholder")}
           />
         </label>
         <label>
-          Status
+          {t("admin.leads.filter.status")}
           <select
             value={statusFilter}
             onChange={(event) => setStatusFilter(event.target.value as "all" | LeadRecord["status"])}
           >
-            <option value="all">All</option>
-            <option value="new">New</option>
-            <option value="in-progress">In Progress</option>
-            <option value="closed">Closed</option>
+            <option value="all">{t("admin.leads.option.all")}</option>
+            <option value="new">{t("admin.leads.option.new")}</option>
+            <option value="in-progress">{t("admin.leads.option.inProgress")}</option>
+            <option value="closed">{t("admin.leads.option.closed")}</option>
           </select>
         </label>
         <label>
-          Progress
+          {t("admin.leads.filter.progress")}
           <select
             value={progressFilter}
             onChange={(event) =>
               setProgressFilter(event.target.value as "all" | "visit-pending" | "visit-confirmed" | "installed")
             }
           >
-            <option value="all">All</option>
-            <option value="visit-pending">Visit Pending</option>
-            <option value="visit-confirmed">Visit Confirmed</option>
-            <option value="installed">Installed</option>
+            <option value="all">{t("admin.leads.option.all")}</option>
+            <option value="visit-pending">{t("admin.leads.option.visitPending")}</option>
+            <option value="visit-confirmed">{t("admin.leads.option.visitConfirmed")}</option>
+            <option value="installed">{t("admin.leads.option.installed")}</option>
           </select>
         </label>
         <button type="button" className="button button-outline" onClick={loadLeads}>
-          Refresh
+          {t("admin.leads.refresh")}
         </button>
       </section>
 
@@ -190,28 +192,28 @@ export default function AdminLeadsTable() {
         <table className="admin-table">
           <thead>
             <tr>
-              <th>Name</th>
-              <th>Phone</th>
-              <th>Location</th>
-              <th>Type</th>
-              <th>Date</th>
-              <th>Workflow</th>
-              <th>Actions</th>
+              <th>{t("Name")}</th>
+              <th>{t("Phone")}</th>
+              <th>{t("Location")}</th>
+              <th>{t("admin.leads.type")}</th>
+              <th>{t("admin.leads.date")}</th>
+              <th>{t("admin.leads.workflow")}</th>
+              <th>{t("admin.leads.actions")}</th>
             </tr>
           </thead>
           <tbody>
             {filteredLeads.map((lead) => (
               <tr key={lead._id}>
-                <td>
+                <td data-label={t("Name")}>
                   <div className="admin-primary-cell">
                     <strong>{lead.name}</strong>
                   </div>
                 </td>
-                <td>{lead.phone}</td>
-                <td>{lead.location}</td>
-                <td>{lead.type}</td>
-                <td>{new Date(lead.createdAt).toLocaleDateString()}</td>
-                <td>
+                <td data-label={t("Phone")}>{lead.phone}</td>
+                <td data-label={t("Location")}>{lead.location}</td>
+                <td data-label={t("admin.leads.type")}>{lead.type}</td>
+                <td data-label={t("admin.leads.date")}>{new Date(lead.createdAt).toLocaleDateString()}</td>
+                <td data-label={t("admin.leads.workflow")}>
                   <div className="workflow-steps">
                     <button
                       type="button"
@@ -224,7 +226,7 @@ export default function AdminLeadsTable() {
                         });
                       }}
                     >
-                      {lead.visitConfirmed ? "✓" : "○"} Visit Confirmed
+                      {lead.visitConfirmed ? "✓" : "○"} {t("admin.leads.option.visitConfirmed")}
                     </button>
                     <button
                       type="button"
@@ -236,18 +238,18 @@ export default function AdminLeadsTable() {
                         })
                       }
                     >
-                      {lead.installationCompleted ? "✓" : "○"} Installation Done
+                      {lead.installationCompleted ? "✓" : "○"} {t("admin.leads.option.installed")}
                     </button>
                   </div>
                 </td>
-                <td>
+                <td data-label={t("admin.leads.actions")}>
                   <div className="table-actions">
                     <span className={`admin-status-badge admin-status-${lead.status}`}>{lead.status}</span>
                     <Link className="button button-outline" href={`/admin/leads/${lead._id}`}>
-                      View
+                      {t("admin.leads.view")}
                     </Link>
                     <button type="button" className="button button-danger" onClick={() => removeLead(lead._id)}>
-                      Delete
+                      {t("admin.leads.delete")}
                     </button>
                   </div>
                 </td>
@@ -257,7 +259,7 @@ export default function AdminLeadsTable() {
         </table>
       </div>
 
-      {filteredLeads.length === 0 ? <p className="admin-empty-state">No leads matched your current filters.</p> : null}
+      {filteredLeads.length === 0 ? <p className="admin-empty-state">{t("admin.leads.noMatch")}</p> : null}
     </>
   );
 }

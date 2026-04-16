@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { useTranslation } from "react-i18next";
 import type { LeadRecord } from "@/types/lead";
 import {
   isImageAttachment,
@@ -35,6 +36,7 @@ function formatAdminDate(value: string | Date) {
 }
 
 export default function LeadDocumentSheet({ lead }: { lead: LeadRecord }) {
+  const { t } = useTranslation();
   const [activeAttachment, setActiveAttachment] = useState<LeadRecord["attachments"][number] | null>(null);
   const [isExportingPdf, setIsExportingPdf] = useState(false);
   const exportContainerRef = useRef<HTMLDivElement | null>(null);
@@ -118,21 +120,21 @@ export default function LeadDocumentSheet({ lead }: { lead: LeadRecord }) {
     <div className="content-card admin-detail-card admin-detail-card-document" ref={exportContainerRef}>
       <div className="admin-detail-head">
         <div>
-          <p className="admin-detail-kicker">Document File</p>
-          <h3>Applicant dossier</h3>
+          <p className="admin-detail-kicker">{t("admin.leadSheet.documentFile")}</p>
+          <h3>{t("admin.leadSheet.applicantDossier")}</h3>
         </div>
         <div className="table-actions">
           <button type="button" className="button button-outline" onClick={exportPageAsPdf} disabled={isExportingPdf}>
-            {isExportingPdf ? "Preparing PDF..." : "Download PDF"}
+            {isExportingPdf ? t("admin.leadSheet.preparingPdf") : t("admin.leadSheet.downloadPdf")}
           </button>
           <Link className="button button-outline" href="/admin">
-            Back to dashboard
+            {t("admin.leadSheet.backToDashboard")}
           </Link>
         </div>
       </div>
 
       <div className="admin-document-layout">
-        <section className="admin-document-hero" aria-label="Applicant overview">
+        <section className="admin-document-hero" aria-label={t("admin.leadSheet.applicantOverview")}>
           <button type="button" className="admin-document-preview admin-document-preview-button" onClick={() => featuredAttachment && openAttachment(featuredAttachment)}>
             {featuredAttachment ? (
               isImageAttachment(featuredAttachment.fileName, featuredAttachment.url) ? (
@@ -140,45 +142,45 @@ export default function LeadDocumentSheet({ lead }: { lead: LeadRecord }) {
               ) : (
                 <div className="admin-document-preview-fallback">
                   <strong>{featuredAttachment.label}</strong>
-                  <span>{isPdfAttachment(featuredAttachment.fileName, featuredAttachment.url) ? "PDF document" : featuredAttachment.fileName}</span>
+                  <span>{isPdfAttachment(featuredAttachment.fileName, featuredAttachment.url) ? t("admin.leadSheet.pdfDocument") : featuredAttachment.fileName}</span>
                 </div>
               )
             ) : (
               <div className="admin-document-preview-fallback">
-                <strong>No primary document</strong>
-                <span>Passport-size image will appear here when available.</span>
+                <strong>{t("admin.leadSheet.noPrimaryDocument")}</strong>
+                <span>{t("admin.leadSheet.passportWillAppear")}</span>
               </div>
             )}
 
             <div className="admin-document-preview-caption">
-              <p>Primary document</p>
-              <strong>{featuredAttachment?.label || "Passport-size photo"}</strong>
-              <span>{featuredAttachment ? "Click to enlarge in a modal." : "Upload the passport photo to show it here."}</span>
+              <p>{t("admin.leadSheet.primaryDocument")}</p>
+              <strong>{featuredAttachment?.label || t("admin.leadSheet.passportSizePhoto")}</strong>
+              <span>{featuredAttachment ? t("admin.leadSheet.clickToEnlarge") : t("admin.leadSheet.uploadPassportPhoto")}</span>
             </div>
           </button>
 
           <div className="admin-document-summary">
             <div className="admin-document-summary-header">
-              <p className="admin-detail-kicker">Identity summary</p>
+              <p className="admin-detail-kicker">{t("admin.leadSheet.identitySummary")}</p>
               <h4>{lead.name}</h4>
               <span>{lead.location}</span>
             </div>
 
             <div className="admin-document-summary-grid">
               <div>
-                <strong>Phone</strong>
+                <strong>{t("Phone")}</strong>
                 <span>{lead.phone}</span>
               </div>
               <div>
-                <strong>Type</strong>
+                <strong>{t("admin.leads.type")}</strong>
                 <span>{lead.type}</span>
               </div>
               <div>
-                <strong>Status</strong>
+                <strong>{t("admin.leads.filter.status")}</strong>
                 <span>{lead.status}</span>
               </div>
               <div>
-                <strong>Submitted</strong>
+                <strong>{t("admin.leadSheet.submitted")}</strong>
                 <span>{formatAdminDate(lead.createdAt)}</span>
               </div>
             </div>
@@ -186,34 +188,34 @@ export default function LeadDocumentSheet({ lead }: { lead: LeadRecord }) {
             <div className="admin-document-summary-badges">
               <span className={`admin-status-badge admin-status-${lead.status}`}>{lead.status}</span>
               <span className={`workflow-step ${lead.visitConfirmed ? "workflow-step-done" : ""}`}>
-                {lead.visitConfirmed ? "✓" : "○"} Visit Confirmed
+                {lead.visitConfirmed ? "✓" : "○"} {t("admin.leads.option.visitConfirmed")}
               </span>
               <span className={`workflow-step ${lead.installationCompleted ? "workflow-step-done" : ""}`}>
-                {lead.installationCompleted ? "✓" : "○"} Installation Done
+                {lead.installationCompleted ? "✓" : "○"} {t("admin.leads.option.installed")}
               </span>
             </div>
 
             <div className="admin-document-summary-snapshot">
               <div>
-                <strong>Email</strong>
-                <span>{applicationSummary.fields.Email || "Not provided"}</span>
+                <strong>{t("Email")}</strong>
+                <span>{applicationSummary.fields.Email || t("admin.leadSheet.notProvided")}</span>
               </div>
               <div>
-                <strong>Property Type</strong>
-                <span>{applicationSummary.fields["Property Type"] || "Not provided"}</span>
+                <strong>{t("Property Type")}</strong>
+                <span>{applicationSummary.fields["Property Type"] || t("admin.leadSheet.notProvided")}</span>
               </div>
               <div>
-                <strong>Roof Type</strong>
-                <span>{applicationSummary.fields["Roof Type"] || "Not provided"}</span>
+                <strong>{t("Roof Type")}</strong>
+                <span>{applicationSummary.fields["Roof Type"] || t("admin.leadSheet.notProvided")}</span>
               </div>
               <div>
-                <strong>Timeline</strong>
-                <span>{applicationSummary.fields["Installation Timeline"] || "Not provided"}</span>
+                <strong>{t("Installation Timeline")}</strong>
+                <span>{applicationSummary.fields["Installation Timeline"] || t("admin.leadSheet.notProvided")}</span>
               </div>
             </div>
 
             <div className="admin-document-summary-footer">
-              <strong>Submitted at</strong>
+              <strong>{t("admin.leadSheet.submittedAt")}</strong>
               <span>{formatAdminDateTime(lead.createdAt)}</span>
             </div>
           </div>
@@ -222,7 +224,7 @@ export default function LeadDocumentSheet({ lead }: { lead: LeadRecord }) {
         <section className="admin-document-section">
           <div className="admin-document-section-head">
             <div>
-              <p className="admin-detail-kicker">Application summary</p>
+              <p className="admin-detail-kicker">{t("admin.leadSheet.applicationSummary")}</p>
               <h4>{applicationSummary.headline}</h4>
             </div>
           </div>
@@ -238,7 +240,7 @@ export default function LeadDocumentSheet({ lead }: { lead: LeadRecord }) {
 
           {applicationSummary.requiredDocuments.length > 0 ? (
             <div className="admin-document-checklist">
-              <p className="admin-detail-kicker">Document status</p>
+              <p className="admin-detail-kicker">{t("admin.leadSheet.documentStatus")}</p>
               <div className="admin-document-checklist-grid">
                 {applicationSummary.requiredDocuments.map((item) => (
                   <div className="admin-document-checklist-item" key={`${item.label}-${item.value}`}>
@@ -252,7 +254,7 @@ export default function LeadDocumentSheet({ lead }: { lead: LeadRecord }) {
 
           {applicationSummary.notes ? (
             <div className="admin-application-notes">
-              <p className="admin-detail-kicker">Notes</p>
+              <p className="admin-detail-kicker">{t("admin.leadSheet.notes")}</p>
               <p>{applicationSummary.notes}</p>
             </div>
           ) : null}
@@ -262,10 +264,10 @@ export default function LeadDocumentSheet({ lead }: { lead: LeadRecord }) {
           <section className="admin-document-section">
             <div className="admin-document-section-head">
               <div>
-                <p className="admin-detail-kicker">Passport photos</p>
-                <h4>Both copies</h4>
+                <p className="admin-detail-kicker">{t("admin.leadSheet.passportPhotos")}</p>
+                <h4>{t("admin.leadSheet.bothCopies")}</h4>
               </div>
-              <span>{passportAttachments.length} photos</span>
+              <span>{passportAttachments.length} {t("admin.leadSheet.photos")}</span>
             </div>
 
             <div className="admin-passport-grid">
@@ -282,7 +284,7 @@ export default function LeadDocumentSheet({ lead }: { lead: LeadRecord }) {
                     <strong>{attachment.label}</strong>
                     <span>{attachment.fileName}</span>
                     <button type="button" className="admin-document-link" onClick={() => openAttachment(attachment)}>
-                      Open preview
+                      {t("admin.leadSheet.openPreview")}
                     </button>
                   </div>
                 </article>
@@ -294,41 +296,41 @@ export default function LeadDocumentSheet({ lead }: { lead: LeadRecord }) {
         <section className="admin-document-section">
           <div className="admin-document-section-head">
             <div>
-              <p className="admin-detail-kicker">Application record</p>
-              <h4>Structured details</h4>
+              <p className="admin-detail-kicker">{t("admin.leadSheet.applicationRecord")}</p>
+              <h4>{t("admin.leadSheet.structuredDetails")}</h4>
             </div>
           </div>
           <div className="admin-detail-grid">
             <p>
-              <strong>Name</strong>
+              <strong>{t("Name")}</strong>
               <span>{lead.name}</span>
             </p>
             <p>
-              <strong>Phone</strong>
+              <strong>{t("Phone")}</strong>
               <span>{lead.phone}</span>
             </p>
             <p>
-              <strong>Location</strong>
+              <strong>{t("Location")}</strong>
               <span>{lead.location}</span>
             </p>
             <p>
-              <strong>Type</strong>
+              <strong>{t("admin.leads.type")}</strong>
               <span>{lead.type}</span>
             </p>
             <p>
-              <strong>Status</strong>
+              <strong>{t("admin.leads.filter.status")}</strong>
               <span>{lead.status}</span>
             </p>
             <p>
-              <strong>Visit Confirmed</strong>
-              <span>{lead.visitConfirmed ? "Yes" : "No"}</span>
+              <strong>{t("admin.leads.option.visitConfirmed")}</strong>
+              <span>{lead.visitConfirmed ? t("Yes") : t("No")}</span>
             </p>
             <p>
-              <strong>Installation Completed</strong>
-              <span>{lead.installationCompleted ? "Yes" : "No"}</span>
+              <strong>{t("admin.leadSheet.installationCompleted")}</strong>
+              <span>{lead.installationCompleted ? t("Yes") : t("No")}</span>
             </p>
             <p>
-              <strong>Submitted At</strong>
+              <strong>{t("admin.leadSheet.submittedAt")}</strong>
               <span>{formatAdminDateTime(lead.createdAt)}</span>
             </p>
           </div>
@@ -338,20 +340,20 @@ export default function LeadDocumentSheet({ lead }: { lead: LeadRecord }) {
           <section className="admin-document-section">
             <div className="admin-document-section-head">
               <div>
-                <p className="admin-detail-kicker">Uploaded documents</p>
-                <h4>Document archive</h4>
+                <p className="admin-detail-kicker">{t("admin.leadSheet.uploadedDocuments")}</p>
+                <h4>{t("admin.leadSheet.documentArchive")}</h4>
               </div>
-              <span>{attachments.length} files</span>
+              <span>{attachments.length} {t("admin.leadSheet.files")}</span>
             </div>
 
             <div className="admin-document-archive">
               {attachments.map((attachment) => {
                 const ratioClass = getAttachmentRatio(attachment.label);
                 const fileTypeLabel = isPdfAttachment(attachment.fileName, attachment.url)
-                  ? "PDF"
+                  ? t("admin.leadSheet.fileTypePdf")
                   : isImageAttachment(attachment.fileName, attachment.url)
-                    ? "Image"
-                    : "File";
+                    ? t("admin.leadSheet.fileTypeImage")
+                    : t("admin.leadSheet.fileTypeGeneric");
 
                 return (
                   <article className="admin-document-card" key={`${attachment.label}-${attachment.publicId}`}>
@@ -373,7 +375,7 @@ export default function LeadDocumentSheet({ lead }: { lead: LeadRecord }) {
                       <strong>{attachment.label}</strong>
                       <span>{attachment.fileName}</span>
                       <button type="button" className="admin-document-link" onClick={() => openAttachment(attachment)}>
-                        Open preview
+                        {t("admin.leadSheet.openPreview")}
                       </button>
                     </div>
                   </article>
@@ -389,11 +391,11 @@ export default function LeadDocumentSheet({ lead }: { lead: LeadRecord }) {
           <div className="admin-document-modal" onClick={(event) => event.stopPropagation()}>
             <div className="admin-document-modal-head">
               <div>
-                <p className="admin-detail-kicker">Document preview</p>
+                <p className="admin-detail-kicker">{t("admin.leadSheet.documentPreview")}</p>
                 <h4>{previewAttachment.label}</h4>
               </div>
               <button type="button" className="button button-outline" onClick={() => setActiveAttachment(null)}>
-                Close
+                {t("Close")}
               </button>
             </div>
 

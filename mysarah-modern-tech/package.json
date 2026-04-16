@@ -6,7 +6,11 @@
     "dev": "next dev --hostname 0.0.0.0 --port 3000",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "loadtest": "node scripts/load-test.mjs",
+    "loadtest:browse": "node scripts/load-test.mjs --scenario browse --concurrency 40 --duration 45",
+    "loadtest:api": "node scripts/load-test.mjs --scenario api --concurrency 60 --duration 45",
+    "loadtest:mixed": "node scripts/load-test.mjs --scenario mixed --concurrency 60 --duration 60"
   },
   "dependencies": {
     "@types/leaflet": "^1.9.21",

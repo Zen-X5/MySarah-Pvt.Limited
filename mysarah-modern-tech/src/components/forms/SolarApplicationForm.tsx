@@ -2,6 +2,7 @@
 
 import { FormEvent, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { trackEvent } from "@/lib/analytics";
 import StatusPopup from "@/components/shared/StatusPopup";
 
 interface SolarFormData {
@@ -144,6 +145,16 @@ const initialForm: SolarFormData = {
   notes: "",
 };
 
+const MAX_UPLOAD_FILE_SIZE_BYTES = 10 * 1024 * 1024;
+
+function createIdempotencyKey() {
+  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+    return crypto.randomUUID();
+  }
+
+  return `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+}
+
 function createEmptyUploads() {
   return uploadItems.reduce<Record<UploadDocumentKey, UploadedDocument[]>>((accumulator, item) => {
     accumulator[item.key] = [];
@@ -183,6 +194,24 @@ async function uploadToCloudinary(file: File) {
     fileName: data.fileName || file.name,
     publicId: data.publicId,
   } satisfies UploadedDocument;
+}
+
+async function uploadFilesWithConcurrency(files: File[], concurrency: number) {
+  const uploaded: UploadedDocument[] = [];
+  let cursor = 0;
+
+  async function worker() {
+    while (cursor < files.length) {
+      const fileIndex = cursor;
+      cursor += 1;
+      uploaded[fileIndex] = await uploadToCloudinary(files[fileIndex]);
+    }
+  }
+
+  const workers = Array.from({ length: Math.min(concurrency, files.length) }, () => worker());
+  await Promise.all(workers);
+
+  return uploaded;
 }
 
 export default function SolarApplicationForm() {
@@ -283,6 +312,15 @@ export default function SolarApplicationForm() {
       const remainingSlots = Math.max(item.requiredCount - existingCount, 0);
       const selectedFiles = Array.from(files).slice(0, remainingSlots || item.requiredCount);
 
+      const tooLarge = selectedFiles.find((file) => file.size > MAX_UPLOAD_FILE_SIZE_BYTES);
+      if (tooLarge) {
+        setDocumentErrors((previous) => ({
+          ...previous,
+          [key]: "Each file must be 10MB or smaller.",
+        }));
+        return;
+      }
+
       if (selectedFiles.length === 0) {
         setDocumentErrors((previous) => ({
           ...previous,
@@ -291,7 +329,7 @@ export default function SolarApplicationForm() {
         return;
       }
 
-      const uploadedFiles = await Promise.all(selectedFiles.map((file) => uploadToCloudinary(file)));
+      const uploadedFiles = await uploadFilesWithConcurrency(selectedFiles, 2);
 
       setUploads((previous) => ({
         ...previous,
@@ -318,6 +356,11 @@ export default function SolarApplicationForm() {
     event.preventDefault();
     setNotice(null);
     setLoading(true);
+
+    trackEvent("lead_form_submit_attempt", {
+      lead_type: "quote",
+      form_name: "solar_application_form",
+    });
 
     const attachments = uploadItems.flatMap((item) =>
       uploads[item.key].map((uploadedFile) => ({
@@ -360,21 +403,38 @@ export default function SolarApplicationForm() {
     };
 
     try {
+      const idempotencyKey = createIdempotencyKey();
+
       const response = await fetch("/api/leads", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          "x-idempotency-key": idempotencyKey,
+        },
         body: JSON.stringify(payload),
       });
 
       const data = await response.json();
 
       if (!response.ok) {
+        trackEvent("lead_form_submit_failed", {
+          lead_type: "quote",
+          form_name: "solar_application_form",
+          status_code: response.status,
+        });
+
         const fieldMessages = data.fieldErrors ? Object.values(data.fieldErrors).flat().join(" ") : "";
         setNotice({
           message: [data.error || t("Unable to submit the application right now."), fieldMessages].filter(Boolean).join(" "),
           tone: "error",
         });
       } else {
+        trackEvent("lead_form_submit_success", {
+          lead_type: "quote",
+          form_name: "solar_application_form",
+          attachment_count: attachments.length,
+        });
+
         setNotice({ message: t("Application submitted successfully. Our team will review and contact you."), tone: "success" });
         setForm(initialForm);
         setUploads(createEmptyUploads());
@@ -382,6 +442,12 @@ export default function SolarApplicationForm() {
         setGpsStatus("");
       }
     } catch {
+      trackEvent("lead_form_submit_failed", {
+        lead_type: "quote",
+        form_name: "solar_application_form",
+        status_code: 0,
+      });
+
       setNotice({ message: t("Network issue while submitting. Please try again."), tone: "error" });
     } finally {
       setLoading(false);

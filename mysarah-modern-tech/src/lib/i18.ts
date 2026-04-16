@@ -35,4 +35,9 @@ if (!i18n.isInitialized) {
   });
 }
 
+// Keep resource bundles in sync during Fast Refresh/HMR so newly added keys resolve immediately.
+i18n.addResourceBundle("en", "translation", eng.strings, true, true);
+i18n.addResourceBundle("hi", "translation", hindi.strings, true, true);
+i18n.addResourceBundle("as", "translation", assamese.strings, true, true);
+
 export default i18n;

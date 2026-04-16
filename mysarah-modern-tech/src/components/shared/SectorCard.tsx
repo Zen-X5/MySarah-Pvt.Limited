@@ -2,7 +2,8 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import type { Sector } from "@/lib/sectors";
 
 interface SectorCardProps {
@@ -10,12 +11,9 @@ interface SectorCardProps {
 }
 
 export default function SectorCard({ sector }: SectorCardProps) {
+  const { t } = useTranslation();
   const [cardImage, setCardImage] = useState(sector.heroImage);
   const imageFitClass = sector.imageFit === "contain" ? "sector-media-image-contain" : "";
-
-  useEffect(() => {
-    setCardImage(sector.heroImage);
-  }, [sector.heroImage]);
 
   return (
     <article className={`sector-card ${sector.active ? "sector-card-active" : "sector-card-inactive"}`}>
@@ -34,13 +32,13 @@ export default function SectorCard({ sector }: SectorCardProps) {
         }}
       />
       <div className="sector-media-overlay" />
-      <p className="sector-state">{sector.active ? "Active" : "Coming Soon"}</p>
+      <p className="sector-state">{sector.active ? t("Active") : t("Coming Soon")}</p>
       <div className="sector-content">
-        <h3>{sector.title}</h3>
-        <p>{sector.description}</p>
+        <h3>{t(sector.title)}</h3>
+        <p>{t(sector.description)}</p>
         {sector.active ? (
           <Link href={`/sectors/${sector.slug}`} className="button button-outline">
-            Explore Sector
+            {t("Explore Sector")}
           </Link>
         ) : null}
       </div>

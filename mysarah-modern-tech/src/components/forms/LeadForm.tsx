@@ -2,6 +2,7 @@
 
 import { FormEvent, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { trackEvent } from "@/lib/analytics";
 import StatusPopup from "@/components/shared/StatusPopup";
 
 type LeadType = "quote" | "contact" | "order";
@@ -17,6 +18,14 @@ interface FormData {
   location: string;
   type: LeadType;
   message: string;
+}
+
+function createIdempotencyKey() {
+  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+    return crypto.randomUUID();
+  }
+
+  return `${Date.now()}-${Math.random().toString(36).slice(2)}`;
 }
 
 const initialForm: FormData = {
@@ -44,26 +53,53 @@ export default function LeadForm({ variant, title }: LeadFormProps) {
     setLoading(true);
     setNotice(null);
 
+    trackEvent("lead_form_submit_attempt", {
+      lead_type: form.type,
+      form_name: "lead_form",
+    });
+
     try {
+      const idempotencyKey = createIdempotencyKey();
+
       const response = await fetch("/api/leads", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          "x-idempotency-key": idempotencyKey,
+        },
         body: JSON.stringify(form),
       });
 
       const payload = await response.json();
 
       if (!response.ok) {
+        trackEvent("lead_form_submit_failed", {
+          lead_type: form.type,
+          form_name: "lead_form",
+          status_code: response.status,
+        });
+
         const fieldMessages = payload.fieldErrors ? Object.values(payload.fieldErrors).flat().join(" ") : "";
         setNotice({
           message: [payload.error || t("Unable to submit request."), fieldMessages].filter(Boolean).join(" "),
           tone: "error",
         });
       } else {
+        trackEvent("lead_form_submit_success", {
+          lead_type: form.type,
+          form_name: "lead_form",
+        });
+
         setNotice({ message: t("Thank you. Our team will contact you shortly."), tone: "success" });
         setForm({ ...initialForm, type: variant ?? "quote" });
       }
     } catch {
+      trackEvent("lead_form_submit_failed", {
+        lead_type: form.type,
+        form_name: "lead_form",
+        status_code: 0,
+      });
+
       setNotice({ message: t("Network issue. Please try again."), tone: "error" });
     } finally {
       setLoading(false);
