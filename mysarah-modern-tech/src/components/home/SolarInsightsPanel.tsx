@@ -5,6 +5,15 @@ import { useEffect, useState } from "react";
 import type { SolarInsights } from "@/types/lead";
 import { useTranslation } from "react-i18next";
 
+const CLIENT_INSIGHTS_TTL_MS = 30_000;
+
+let insightsClientCache:
+  | {
+      data: SolarInsights;
+      expiresAt: number;
+    }
+  | null = null;
+
 export default function SolarInsightsPanel() {
   const { t } = useTranslation();
   const SolarInstallMap = dynamic(() => import("@/components/home/SolarInstallMap"), {
@@ -18,15 +27,21 @@ export default function SolarInsightsPanel() {
 
   useEffect(() => {
     async function loadInsights() {
+      const now = Date.now();
+      if (insightsClientCache && insightsClientCache.expiresAt > now) {
+        setInsights(insightsClientCache.data);
+        setLoading(false);
+        return;
+      }
+
       setLoading(true);
       setError("");
       try {
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 12000); // 12 second timeout (allows 8s DB + 4s network)
 
-        const response = await fetch("/api/insights/solar", { 
-          method: "GET", 
-          cache: "no-store",
+        const response = await fetch("/api/insights/solar", {
+          method: "GET",
           signal: controller.signal,
         });
 
@@ -37,6 +52,12 @@ export default function SolarInsightsPanel() {
           setError(data.error || t("Unable to load insights."));
           return;
         }
+
+        insightsClientCache = {
+          data: data.data,
+          expiresAt: now + CLIENT_INSIGHTS_TTL_MS,
+        };
+
         setInsights(data.data);
       } catch (err) {
         if (err instanceof Error && err.name === 'AbortError') {

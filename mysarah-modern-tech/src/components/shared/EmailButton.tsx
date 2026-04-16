@@ -1,6 +1,11 @@
+"use client";
+
 import { company } from "@/lib/constants";
+import { trackEvent } from "@/lib/analytics";
+import { useTranslation } from "react-i18next";
 
 export default function EmailButton() {
+  const { t } = useTranslation();
   const gmailComposeUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(company.email)}`;
 
   return (
@@ -9,8 +14,14 @@ export default function EmailButton() {
       className="email-fab"
       target="_blank"
       rel="noopener noreferrer"
-      aria-label="Send email"
-      title="Send email"
+      onClick={() =>
+        trackEvent("cta_click", {
+          cta_channel: "email",
+          cta_location: "floating_button",
+        })
+      }
+      aria-label={t("Send email")}
+      title={t("Send email")}
     >
       <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
         <path

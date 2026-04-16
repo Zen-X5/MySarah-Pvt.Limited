@@ -92,6 +92,7 @@ public/
 - WhatsApp floating CTA
 - Google Maps embed
 - SEO metadata + Open Graph + sitemap + robots
+- GA4 analytics with SPA page-view tracking, web-vitals events, and lead conversion events
 - Responsive mobile-first UI with animations
 
 ## Environment Variables
@@ -133,6 +134,24 @@ npm run dev
 ```
 
 Open `http://localhost:3000`
+
+## Traffic Validation and Capacity Testing
+
+Run built-in load tests before deployment:
+
+```bash
+npm run loadtest:browse
+npm run loadtest:api
+npm run loadtest:mixed
+```
+
+Custom target example:
+
+```bash
+npm run loadtest:mixed -- --url https://mysarahtech.com --concurrency 80 --duration 60
+```
+
+See full operational playbook in `TRAFFIC_LOAD_TEST_AND_CAPACITY.md`.
 
 ## API Endpoints
 

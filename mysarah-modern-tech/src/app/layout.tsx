@@ -11,6 +11,8 @@ import { seo } from "@/lib/constants";
 import "./globals.css";
 import "leaflet/dist/leaflet.css";
 
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://mysarahtech.com";
+
 const manrope = Manrope({
   variable: "--font-manrope",
   subsets: ["latin"],
@@ -25,12 +27,22 @@ export const metadata: Metadata = {
   title: seo.title,
   description: seo.description,
   keywords: seo.keywords,
+  metadataBase: new URL(siteUrl),
+  alternates: {
+    canonical: "/",
+  },
   openGraph: {
     title: seo.title,
     description: seo.description,
+    url: siteUrl,
     type: "website",
     locale: "en_IN",
     siteName: "Mysarah Modern Tech",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: seo.title,
+    description: seo.description,
   },
 };
 

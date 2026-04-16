@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { type ReactNode, useEffect, useState } from "react";
+import { type ReactNode, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { motion, useReducedMotion } from "framer-motion";
 
@@ -20,38 +20,41 @@ export default function HeroCarousel() {
   const [brokenSlides, setBrokenSlides] = useState<boolean[]>(() => [false, false, false]);
   const reduceMotion = useReducedMotion();
 
-  const slides: Slide[] = [
-    {
-      title: t("Powering Assam with modern solar infrastructure"),
-      richTitle: (
-        <>
-          {t("Powering")} <span className="hero-keyword">{t("Assam")}</span> {t("with modern solar infrastructure")}
-        </>
-      ),
-      subtitle: t("Mysarah Modern Tech Private Limited is building a future-ready multi-sector platform, starting with clean energy solutions."),
-      image: "/images/home1.png",
-    },
-    {
-      title: t("Corporate execution with startup speed"),
-      richTitle: (
-        <>
-          <span className="hero-keyword">{t("Corporate")}</span> {t("execution with startup speed")}
-        </>
-      ),
-      subtitle: t("Structured delivery, transparent process, and technology-first field operations for residential and commercial projects."),
-      image: "/images/offer3.png",
-    },
-    {
-      title: t("Designed to scale across sectors"),
-      richTitle: (
-        <>
-          {t("Designed to scale across")} <span className="hero-keyword">{t("sectors")}</span>
-        </>
-      ),
-      subtitle: t("A modular service architecture that expands from solar into smart infrastructure without redesigning the business core."),
-      image: "/images/startup.jpg",
-    },
-  ];
+  const slides: Slide[] = useMemo(
+    () => [
+      {
+        title: t("Powering Assam with modern solar infrastructure"),
+        richTitle: (
+          <>
+            {t("Powering")} <span className="hero-keyword">{t("Assam")}</span> {t("with modern solar infrastructure")}
+          </>
+        ),
+        subtitle: t("Mysarah Modern Tech Private Limited is building a future-ready multi-sector platform, starting with clean energy solutions."),
+        image: "/images/home1.png",
+      },
+      {
+        title: t("Corporate execution with startup speed"),
+        richTitle: (
+          <>
+            <span className="hero-keyword">{t("Corporate")}</span> {t("execution with startup speed")}
+          </>
+        ),
+        subtitle: t("Structured delivery, transparent process, and technology-first field operations for residential and commercial projects."),
+        image: "/images/offer3.png",
+      },
+      {
+        title: t("Designed to scale across sectors"),
+        richTitle: (
+          <>
+            {t("Designed to scale across")} <span className="hero-keyword">{t("sectors")}</span>
+          </>
+        ),
+        subtitle: t("A modular service architecture that expands from solar into smart infrastructure without redesigning the business core."),
+        image: "/images/startup.jpg",
+      },
+    ],
+    [t],
+  );
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -109,7 +112,7 @@ export default function HeroCarousel() {
               <span>{t("Active sector live")}</span>
             </div>
             <div>
-              <strong>04</strong>
+              <strong>16</strong>
               <span>{t("Total sector roadmap")}</span>
             </div>
             <div>
@@ -146,11 +149,11 @@ export default function HeroCarousel() {
                     alt={slide.title}
                     width={620}
                     height={460}
-                    quality={95}
+                    quality={90}
                     sizes="(max-width: 1024px) 100vw, 620px"
                     className={index === active ? "hero-image-slide active" : "hero-image-slide"}
                     priority={index === 0}
-                    loading={index === 0 ? undefined : "eager"}
+                    loading={index === 0 ? undefined : "lazy"}
                     onError={() => {
                       setBrokenSlides((prev) => {
                         const next = [...prev];

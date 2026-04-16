@@ -49,7 +49,7 @@ const slides: SlideItem[] = [
 
 export default function SectorShowcaseSlider() {
   const [currentSlide, setCurrentSlide] = useState(0);
-  const [sliderImageLoaded, setSliderImageLoaded] = useState(false);
+  const [loadedImages, setLoadedImages] = useState<Record<string, boolean>>({});
   const [brokenImages, setBrokenImages] = useState<Record<string, boolean>>({});
   const [imageTimeout, setImageTimeout] = useState<Record<string, boolean>>({});
   const reduceMotion = useReducedMotion();
@@ -66,7 +66,7 @@ export default function SectorShowcaseSlider() {
   useEffect(() => {
     // Set timeout for image loading to prevent page from hanging
     const slide = slides[currentSlide];
-    if (slide && slide.image && !sliderImageLoaded) {
+    if (slide && slide.image && !loadedImages[slide.image]) {
       const timeout = setTimeout(() => {
         setImageTimeout((prev) => ({
           ...prev,
@@ -76,7 +76,7 @@ export default function SectorShowcaseSlider() {
 
       return () => clearTimeout(timeout);
     }
-  }, [currentSlide, sliderImageLoaded]);
+  }, [currentSlide, loadedImages]);
 
   return (
     <div className="sectors-slider-shell" aria-label={t("Sector showcase slider")}>
@@ -86,6 +86,7 @@ export default function SectorShowcaseSlider() {
             const imageSrc = slide.image ?? "/images/home.png";
             const isTimedOut = imageTimeout[imageSrc];
             const resolvedSrc = brokenImages[imageSrc] || isTimedOut ? "/images/home.png" : imageSrc;
+            const isLoaded = Boolean(loadedImages[resolvedSrc] || loadedImages[imageSrc]);
 
             return (
             <motion.article
@@ -96,7 +97,7 @@ export default function SectorShowcaseSlider() {
               animate={index === currentSlide ? { opacity: 1 } : { opacity: 0 }}
               transition={{ duration: reduceMotion ? 0.2 : 0.9 }}
             >
-              {!sliderImageLoaded && !isTimedOut && index === currentSlide ? (
+              {!isLoaded && !isTimedOut && index === currentSlide ? (
                 <div className="sectors-slide-skeleton" aria-hidden="true" />
               ) : null}
               <div className="sectors-slide-media">
@@ -108,6 +109,7 @@ export default function SectorShowcaseSlider() {
                   sizes="100vw"
                   className="sectors-slide-image"
                   priority={index === 0}
+                  loading={index === 0 ? undefined : "lazy"}
                   onError={() => {
                     setBrokenImages((prev) => {
                       if (prev[imageSrc]) {
@@ -120,7 +122,18 @@ export default function SectorShowcaseSlider() {
                       };
                     });
                   }}
-                  onLoad={() => index === currentSlide && setSliderImageLoaded(true)}
+                  onLoad={() => {
+                    setLoadedImages((prev) => {
+                      if (prev[imageSrc]) {
+                        return prev;
+                      }
+
+                      return {
+                        ...prev,
+                        [imageSrc]: true,
+                      };
+                    });
+                  }}
                 />
                 <div className="sectors-slide-overlay" />
                 {slide.variant !== "brand" ? (

@@ -36,4 +36,11 @@ const LeadSchema = new Schema(
   },
 );
 
+LeadSchema.index({ createdAt: -1 });
+LeadSchema.index({ installedAt: -1 });
+LeadSchema.index({ installationCompleted: 1, installedAt: -1 });
+LeadSchema.index({ visitConfirmed: 1 });
+LeadSchema.index({ status: 1, createdAt: -1 });
+LeadSchema.index({ location: 1 });
+
 export const Lead = models.Lead || model("Lead", LeadSchema);

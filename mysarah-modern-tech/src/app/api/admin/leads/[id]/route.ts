@@ -3,7 +3,9 @@ import { deleteLead, updateLeadProgress } from "@/lib/lead-service";
 import { getAdminSession } from "@/lib/auth";
 import { formatZodErrors, updateLeadStatusSchema } from "@/lib/validation";
 import { rejectCrossSiteRequest } from "@/lib/security";
-import { parseJsonRequest } from "@/lib/api";
+import { jsonNoStore, parseJsonRequest } from "@/lib/api";
+
+export const runtime = "nodejs";
 
 interface LeadParams {
   params: Promise<{ id: string }>;
@@ -12,13 +14,14 @@ interface LeadParams {
 export async function PATCH(request: Request, { params }: LeadParams) {
   const blocked = rejectCrossSiteRequest(request);
   if (blocked) {
+    blocked.headers.set("Cache-Control", "no-store, max-age=0");
     return blocked;
   }
 
   const session = await getAdminSession();
 
   if (!session) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return jsonNoStore({ error: "Unauthorized" }, 401);
   }
 
   try {
@@ -32,34 +35,35 @@ export async function PATCH(request: Request, { params }: LeadParams) {
 
     if (!parsed.success) {
       const validation = formatZodErrors(parsed.error);
-      return NextResponse.json(
+      return jsonNoStore(
         { error: validation.message, fieldErrors: validation.fieldErrors },
-        { status: 400 },
+        400,
       );
     }
 
     const { id } = await params;
     const result = await updateLeadProgress(id, parsed.data);
     if (!result) {
-      return NextResponse.json({ error: "Lead not found." }, { status: 404 });
+      return jsonNoStore({ error: "Lead not found." }, 404);
     }
 
-    return NextResponse.json({ ok: true, data: result });
+    return jsonNoStore({ ok: true, data: result });
   } catch {
-    return NextResponse.json({ error: "Unable to update lead." }, { status: 500 });
+    return jsonNoStore({ error: "Unable to update lead." }, 500);
   }
 }
 
 export async function DELETE(request: Request, { params }: LeadParams) {
   const blocked = rejectCrossSiteRequest(request);
   if (blocked) {
+    blocked.headers.set("Cache-Control", "no-store, max-age=0");
     return blocked;
   }
 
   const session = await getAdminSession();
 
   if (!session) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return jsonNoStore({ error: "Unauthorized" }, 401);
   }
 
   try {
@@ -67,11 +71,11 @@ export async function DELETE(request: Request, { params }: LeadParams) {
     const result = await deleteLead(id);
 
     if (!result) {
-      return NextResponse.json({ error: "Lead not found." }, { status: 404 });
+      return jsonNoStore({ error: "Lead not found." }, 404);
     }
 
-    return NextResponse.json({ ok: true });
+    return jsonNoStore({ ok: true });
   } catch {
-    return NextResponse.json({ error: "Unable to delete lead." }, { status: 500 });
+    return jsonNoStore({ error: "Unable to delete lead." }, 500);
   }
 }

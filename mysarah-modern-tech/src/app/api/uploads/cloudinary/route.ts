@@ -1,11 +1,15 @@
 import { NextResponse } from "next/server";
 import { rejectCrossSiteRequest } from "@/lib/security";
+import { API_NO_STORE_HEADERS, jsonNoStore } from "@/lib/api";
+
+export const runtime = "nodejs";
 
 const MAX_UPLOAD_BYTES = 12 * 1024 * 1024;
 
 export async function POST(request: Request) {
   const blocked = rejectCrossSiteRequest(request);
   if (blocked) {
+    blocked.headers.set("Cache-Control", "no-store, max-age=0");
     return blocked;
   }
 
@@ -13,9 +17,9 @@ export async function POST(request: Request) {
   const uploadPreset = process.env.CLOUDINARY_UPLOAD_PRESET || process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET;
 
   if (!cloudName || !uploadPreset) {
-    return NextResponse.json(
+    return jsonNoStore(
       { error: "Cloudinary is not configured. Set CLOUDINARY_CLOUD_NAME and CLOUDINARY_UPLOAD_PRESET." },
-      { status: 500 },
+      500,
     );
   }
 
@@ -24,11 +28,11 @@ export async function POST(request: Request) {
     const file = incoming.get("file");
 
     if (!(file instanceof File)) {
-      return NextResponse.json({ error: "No upload file received." }, { status: 400 });
+      return jsonNoStore({ error: "No upload file received." }, 400);
     }
 
     if (file.size > MAX_UPLOAD_BYTES) {
-      return NextResponse.json({ error: "File is too large. Maximum allowed size is 12 MB." }, { status: 413 });
+      return jsonNoStore({ error: "File is too large. Maximum allowed size is 12 MB." }, 413);
     }
 
     const outbound = new FormData();
@@ -46,14 +50,14 @@ export async function POST(request: Request) {
       | null;
 
     if (!cloudinaryResponse.ok) {
-      return NextResponse.json(
+      return jsonNoStore(
         { error: data?.error?.message || "Cloudinary rejected the upload request." },
-        { status: 502 },
+        502,
       );
     }
 
     if (!data?.secure_url || !data.public_id) {
-      return NextResponse.json({ error: "Cloudinary response was missing file details." }, { status: 502 });
+      return jsonNoStore({ error: "Cloudinary response was missing file details." }, 502);
     }
 
     return NextResponse.json({
@@ -61,9 +65,11 @@ export async function POST(request: Request) {
       url: data.secure_url,
       publicId: data.public_id,
       fileName: data.original_filename || file.name,
+    }, {
+      headers: API_NO_STORE_HEADERS,
     });
   } catch (error) {
     console.error("[api/uploads/cloudinary] upload failed", error);
-    return NextResponse.json({ error: "Upload service failed. Please try again." }, { status: 500 });
+    return jsonNoStore({ error: "Upload service failed. Please try again." }, 500);
   }
 }

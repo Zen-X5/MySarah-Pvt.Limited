@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
+import AdminLeadHeader from "@/app/admin/leads/[id]/AdminLeadHeader";
 import LeadDocumentSheet from "@/components/admin/LeadDocumentSheet";
 import { getAdminSession } from "@/lib/auth";
 import { getLeadById } from "@/lib/lead-service";
@@ -26,13 +27,7 @@ export default async function AdminLeadDetailPage({ params }: { params: Promise<
   return (
     <main className="section container">
       <div className="admin-shell">
-        <header className="admin-head">
-          <div>
-            <p className="admin-kicker">Operations Console</p>
-            <h1>Lead Document Sheet</h1>
-            <p className="admin-subtitle">A structured record page for one applicant, with identity, documents, and status in one place.</p>
-          </div>
-        </header>
+        <AdminLeadHeader />
       </div>
 
       <LeadDocumentSheet lead={lead} />

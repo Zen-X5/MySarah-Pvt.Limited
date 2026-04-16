@@ -13,6 +13,7 @@ import { sectors } from "@/lib/sectors";
 export default function Home() {
   const { t } = useTranslation();
   const featured = sectors.slice(0, 4);
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://mysarahtech.com";
 
   const blueprintCards = [
     {
@@ -41,6 +42,42 @@ export default function Home() {
   
   return (
     <main>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "Organization",
+            name: company.name,
+            url: siteUrl,
+            email: company.email,
+            telephone: company.phone,
+            address: {
+              "@type": "PostalAddress",
+              addressLocality: company.city,
+              addressCountry: company.country,
+            },
+          }),
+        }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "Service",
+            name: "Solar Installation Services",
+            provider: {
+              "@type": "Organization",
+              name: company.name,
+              url: siteUrl,
+            },
+            areaServed: "India",
+            serviceType: "Rooftop solar installation",
+          }),
+        }}
+      />
+
       <HeroCarousel />
 
       <section className="section media-story-section">
@@ -51,6 +88,7 @@ export default function Home() {
             muted
             loop
             playsInline
+            preload="metadata"
             poster="/images/solarTransition.png"
           >
             <source src="/videos/about.mp4" type="video/mp4" />
@@ -185,6 +223,17 @@ export default function Home() {
             </Link>
             <Link href="/contact" className="button button-outline">
               {t("Contact Team")}
+            </Link>
+          </div>
+          <div className="cta-row">
+            <Link href="/solar-installation-india" className="button button-outline">
+              Solar Installation India
+            </Link>
+            <Link href="/solar-price-india" className="button button-outline">
+              Solar Price India
+            </Link>
+            <Link href="/solar-subsidy-india" className="button button-outline">
+              Solar Subsidy India
             </Link>
           </div>
         </div>

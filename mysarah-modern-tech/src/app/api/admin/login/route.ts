@@ -3,18 +3,30 @@ import { adminLoginSchema } from "@/lib/validation";
 import { authCookie, createAdminToken, verifyAdminCredentials } from "@/lib/auth";
 import { clearLoginRateLimit, getClientIp, isLoginRateLimited, rejectCrossSiteRequest } from "@/lib/security";
 import { formatZodErrors } from "@/lib/validation";
-import { parseJsonRequest } from "@/lib/api";
+import { API_NO_STORE_HEADERS, jsonNoStore, parseJsonRequest } from "@/lib/api";
+
+export const runtime = "nodejs";
 
 export async function POST(request: Request) {
   const blocked = rejectCrossSiteRequest(request);
   if (blocked) {
+    blocked.headers.set("Cache-Control", "no-store, max-age=0");
     return blocked;
   }
 
   try {
     const ip = getClientIp(request);
     if (isLoginRateLimited(ip)) {
-      return NextResponse.json({ error: "Too many login attempts. Try again later." }, { status: 429 });
+      return NextResponse.json(
+        { error: "Too many login attempts. Try again later." },
+        {
+          status: 429,
+          headers: {
+            ...API_NO_STORE_HEADERS,
+            "Retry-After": "600",
+          },
+        },
+      );
     }
 
     const parsedBody = await parseJsonRequest<unknown>(request);
@@ -27,9 +39,9 @@ export async function POST(request: Request) {
 
     if (!parsed.success) {
       const validation = formatZodErrors(parsed.error);
-      return NextResponse.json(
+      return jsonNoStore(
         { error: validation.message, fieldErrors: validation.fieldErrors },
-        { status: 400 },
+        400,
       );
     }
 
@@ -37,16 +49,16 @@ export async function POST(request: Request) {
     const valid = await verifyAdminCredentials(username, password);
 
     if (!valid) {
-      return NextResponse.json({ error: "Invalid username or password." }, { status: 401 });
+      return jsonNoStore({ error: "Invalid username or password." }, 401);
     }
 
     clearLoginRateLimit(ip);
 
     const token = createAdminToken({ username });
-    const response = NextResponse.json({ ok: true });
+    const response = jsonNoStore({ ok: true });
     response.cookies.set(authCookie.name, token, authCookie.options);
     return response;
   } catch {
-    return NextResponse.json({ error: "Server error." }, { status: 500 });
+    return jsonNoStore({ error: "Server error." }, 500);
   }
 }

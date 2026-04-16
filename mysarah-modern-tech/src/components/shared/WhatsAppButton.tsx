@@ -1,14 +1,26 @@
+"use client";
+
 import { company } from "@/lib/constants";
+import { trackEvent } from "@/lib/analytics";
+import { useTranslation } from "react-i18next";
 
 export default function WhatsAppButton() {
+  const { t } = useTranslation();
+
   return (
     <a
       href={`https://wa.me/${company.whatsappNumber}`}
       className="whatsapp-fab"
       target="_blank"
       rel="noopener noreferrer"
-      aria-label="Chat on WhatsApp"
-      title="Chat on WhatsApp"
+      onClick={() =>
+        trackEvent("cta_click", {
+          cta_channel: "whatsapp",
+          cta_location: "floating_button",
+        })
+      }
+      aria-label={t("Chat on WhatsApp")}
+      title={t("Chat on WhatsApp")}
     >
       <svg viewBox="0 0 32 32" aria-hidden="true" focusable="false">
         <path

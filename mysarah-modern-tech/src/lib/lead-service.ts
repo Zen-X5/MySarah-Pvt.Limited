@@ -52,7 +52,22 @@ export async function createLead(input: LeadInput) {
 
 export async function getLeads() {
   await connectDb();
-  return Lead.find().sort({ createdAt: -1 }).lean();
+  return Lead.find(
+    {},
+    {
+      _id: 1,
+      name: 1,
+      phone: 1,
+      location: 1,
+      type: 1,
+      status: 1,
+      visitConfirmed: 1,
+      installationCompleted: 1,
+      createdAt: 1,
+    },
+  )
+    .sort({ createdAt: -1 })
+    .lean();
 }
 
 export async function getLeadById(id: string) {
@@ -106,13 +121,17 @@ export async function updateLeadProgress(id: string, update: LeadProgressUpdate)
 export async function getSolarInsights() {
   await connectDb();
 
-  const installedLeads = await Lead.find({ installationCompleted: true })
-    .sort({ installedAt: -1, updatedAt: -1 })
-    .lean();
-
-  const visitConfirmedCount = await Lead.countDocuments({ visitConfirmed: true });
-  const pipelineOpenCount = await Lead.countDocuments({ installationCompleted: false });
-  const totalLeads = await Lead.countDocuments();
+  const [installedLeads, visitConfirmedCount, pipelineOpenCount, totalLeads] = await Promise.all([
+    Lead.find(
+      { installationCompleted: true },
+      { _id: 1, name: 1, location: 1, installedAt: 1, updatedAt: 1, createdAt: 1 },
+    )
+      .sort({ installedAt: -1, updatedAt: -1 })
+      .lean(),
+    Lead.countDocuments({ visitConfirmed: true }),
+    Lead.countDocuments({ installationCompleted: false }),
+    Lead.countDocuments(),
+  ]);
 
   const locationsMap = new Map<string, number>();
   for (const lead of installedLeads) {
