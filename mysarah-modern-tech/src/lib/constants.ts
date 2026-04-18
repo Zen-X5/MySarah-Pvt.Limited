@@ -8,7 +8,7 @@ export const company = {
   whatsappNumber: "919365357806",
   address: "Sivasagar, Assam, India",
   socialProfiles: {
-    instagram: "https://www.instagram.com/mysarahmoderntech",
+    instagram: "https://www.instagram.com/mysarah_modern_tech_pvt.ltd?igsh=YzZvaXAzdGg4enh1",
     facebook: "https://www.facebook.com/mysarahmoderntech",
     linkedin: "https://www.linkedin.com/company/mysarah-modern-tech",
   },
