@@ -3,8 +3,8 @@ export const company = {
   shortName: "MySarah Modern Tech",
   city: "Assam",
   country: "India",
-  phone: "+91 70000 00000",
-  email: "hello@mysarahtech.com",
+  phone: "+91 9365357806",
+  email: "mysarahmoderntechpvtltd2025@gmail.com",
   whatsappNumber: "919365357806",
   address: "Sivasagar, Assam, India",
   socialProfiles: {
