@@ -250,7 +250,7 @@ const solarKeywordsExpanded = Array.from(
 );
 
 export const seo = {
-  title: "Solar Installation Company in India | Mysarah Modern Tech",
+  title: "MySarah Modern Tech Pvt.Limited-MultiSector Company",
   description:
     "Mysarah Modern Tech delivers rooftop solar installation, commercial solar EPC, subsidy guidance, and end-to-end solar project execution across India.",
   keywords: solarKeywordsExpanded,
