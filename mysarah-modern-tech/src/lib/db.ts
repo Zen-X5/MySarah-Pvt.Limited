@@ -1,6 +1,7 @@
 import mongoose from "mongoose";
 
 const MONGODB_URI = process.env.MONGODB_URI;
+const MONGODB_DB_NAME = process.env.MONGODB_DB_NAME?.trim();
 
 type CachedMongoose = {
   conn: typeof mongoose | null;
@@ -28,7 +29,7 @@ export async function connectDb() {
 
   if (!cached.promise) {
     const connectPromise = mongoose.connect(MONGODB_URI as string, {
-      dbName: "mysarah_corp",
+      ...(MONGODB_DB_NAME ? { dbName: MONGODB_DB_NAME } : {}),
       serverSelectionTimeoutMS: 5000,
       socketTimeoutMS: 8000,
       connectTimeoutMS: 5000,
