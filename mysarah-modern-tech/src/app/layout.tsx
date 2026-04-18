@@ -28,6 +28,11 @@ export const metadata: Metadata = {
   description: seo.description,
   keywords: seo.keywords,
   metadataBase: new URL(siteUrl),
+  icons: {
+    icon: "/logo.png",
+    shortcut: "/logo.png",
+    apple: "/logo.png",
+  },
   alternates: {
     canonical: "/",
   },
