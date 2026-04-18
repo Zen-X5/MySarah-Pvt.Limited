@@ -23,6 +23,7 @@ const slides: SlideItem[] = [
     detail: " ",
     variant: "brand",
     image: "/images/Sector11.png",
+
   },
   {
     label: "Solar EPC",
@@ -178,16 +179,18 @@ export default function SectorShowcaseSlider() {
                     </svg>
                   </motion.div>
                 ) : null}
-                <motion.div
-                  className="sectors-slide-copy"
-                  initial={{ opacity: 0, y: reduceMotion ? 0 : 20 }}
-                  animate={index === currentSlide ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
-                  transition={{ duration: reduceMotion ? 0.2 : 0.72, delay: 0.2 }}
-                >
-                  <p>{t(slide.label)}</p>
-                  <h3>{slide.variant === "brand" ? company.name : t(slide.title)}</h3>
-                  <span>{t(slide.detail)}</span>
-                </motion.div>
+                {slide.variant !== "brand" ? (
+                  <motion.div
+                    className="sectors-slide-copy"
+                    initial={{ opacity: 0, y: reduceMotion ? 0 : 20 }}
+                    animate={index === currentSlide ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
+                    transition={{ duration: reduceMotion ? 0.2 : 0.72, delay: 0.2 }}
+                  >
+                    <p>{t(slide.label)}</p>
+                    <h3>{t(slide.title)}</h3>
+                    <span>{t(slide.detail)}</span>
+                  </motion.div>
+                ) : null}
               </div>
             </motion.article>
             );
