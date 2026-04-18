@@ -22,6 +22,7 @@ const slides: SlideItem[] = [
     title: " ",
     detail: " ",
     variant: "brand",
+    image: "/images/Sector11.png",
   },
   {
     label: "Solar EPC",
