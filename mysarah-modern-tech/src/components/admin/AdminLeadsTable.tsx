@@ -19,6 +19,7 @@ export default function AdminLeadsTable({ mode = "solar" }: AdminLeadsTableProps
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<"all" | LeadRecord["status"]>("all");
   const [progressFilter, setProgressFilter] = useState<"all" | "visit-pending" | "visit-confirmed" | "installed">("all");
+  const [activeContact, setActiveContact] = useState<LeadRecord | null>(null);
   const isContactView = mode === "contact";
   const apiBasePath = isContactView ? "/api/admin/contacts" : "/api/admin/leads";
 
@@ -283,6 +284,15 @@ export default function AdminLeadsTable({ mode = "solar" }: AdminLeadsTableProps
                 <td data-label={t("admin.leads.actions")}>
                   <div className="table-actions">
                     <span className={`admin-status-badge admin-status-${lead.status}`}>{lead.status}</span>
+                    {isContactView ? (
+                      <button
+                        type="button"
+                        className="button button-outline"
+                        onClick={() => setActiveContact(lead)}
+                      >
+                        View
+                      </button>
+                    ) : null}
                     {!isContactView ? (
                       <Link className="button button-outline" href={`/admin/leads/${lead._id}`}>
                         {t("admin.leads.view")}
@@ -304,6 +314,43 @@ export default function AdminLeadsTable({ mode = "solar" }: AdminLeadsTableProps
       </div>
 
       {filteredLeads.length === 0 ? <p className="admin-empty-state">{t("admin.leads.noMatch")}</p> : null}
+
+      {isContactView && activeContact ? (
+        <div className="admin-document-modal-backdrop" role="dialog" aria-modal="true" aria-label="Contact form details">
+          <div className="admin-document-modal admin-detail-modal">
+            <header className="admin-document-modal-head">
+              <div>
+                <p className="admin-kicker">Contact Us Form</p>
+                <h4>{activeContact.name}</h4>
+              </div>
+              <button type="button" className="button button-outline" onClick={() => setActiveContact(null)}>
+                Close
+              </button>
+            </header>
+
+            <div className="admin-document-modal-body admin-detail-modal-body">
+              <div className="admin-detail-modal-grid">
+                <p>
+                  <strong>Phone:</strong> {activeContact.phone}
+                </p>
+                <p>
+                  <strong>Location:</strong> {activeContact.location}
+                </p>
+                <p>
+                  <strong>Status:</strong> {activeContact.status}
+                </p>
+                <p>
+                  <strong>Date:</strong> {new Date(activeContact.createdAt).toLocaleString()}
+                </p>
+                <div className="admin-detail-message-block">
+                  <strong>Message</strong>
+                  <p>{activeContact.message}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </>
   );
 }

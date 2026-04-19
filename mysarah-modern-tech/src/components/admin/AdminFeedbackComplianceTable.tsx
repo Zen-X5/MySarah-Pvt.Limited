@@ -10,6 +10,7 @@ export default function AdminFeedbackComplianceTable() {
   const [error, setError] = useState("");
   const [notice, setNotice] = useState<{ message: string; tone: "success" | "error" } | null>(null);
   const [query, setQuery] = useState("");
+  const [activeEntry, setActiveEntry] = useState<FeedbackComplianceRecord | null>(null);
 
   const loadEntries = useCallback(async () => {
     setLoading(true);
@@ -152,6 +153,9 @@ export default function AdminFeedbackComplianceTable() {
                 <td data-label="Date">{new Date(entry.createdAt).toLocaleDateString()}</td>
                 <td data-label="Actions">
                   <div className="table-actions">
+                    <button type="button" className="button button-outline" onClick={() => setActiveEntry(entry)}>
+                      View
+                    </button>
                     <button type="button" className="button" onClick={() => resolveEntry(entry._id)}>
                       Mark as Resolved
                     </button>
@@ -164,6 +168,43 @@ export default function AdminFeedbackComplianceTable() {
       </div>
 
       {filteredEntries.length === 0 ? <p className="admin-empty-state">No matching feedback/compliance entries.</p> : null}
+
+      {activeEntry ? (
+        <div className="admin-document-modal-backdrop" role="dialog" aria-modal="true" aria-label="Feedback and compliance details">
+          <div className="admin-document-modal admin-detail-modal">
+            <header className="admin-document-modal-head">
+              <div>
+                <p className="admin-kicker">Feedback and Compliance</p>
+                <h4>{activeEntry.name}</h4>
+              </div>
+              <button type="button" className="button button-outline" onClick={() => setActiveEntry(null)}>
+                Close
+              </button>
+            </header>
+
+            <div className="admin-document-modal-body admin-detail-modal-body">
+              <div className="admin-detail-modal-grid">
+                <p>
+                  <strong>Email:</strong> {activeEntry.email}
+                </p>
+                <p>
+                  <strong>Phone:</strong> {activeEntry.phone || "-"}
+                </p>
+                <p>
+                  <strong>Category:</strong> {activeEntry.category}
+                </p>
+                <p>
+                  <strong>Date:</strong> {new Date(activeEntry.createdAt).toLocaleString()}
+                </p>
+                <div className="admin-detail-message-block">
+                  <strong>Message</strong>
+                  <p>{activeEntry.message}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </>
   );
 }
