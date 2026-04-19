@@ -3260,6 +3260,39 @@ a {
   background: #fff;
 }
 
+.admin-detail-modal {
+  width: min(760px, 96vw);
+}
+
+.admin-detail-modal-body {
+  display: block;
+  padding: 1rem;
+}
+
+.admin-detail-modal-grid {
+  display: grid;
+  gap: 0.65rem;
+}
+
+.admin-detail-modal-grid p {
+  margin: 0;
+  color: #1d3d2a;
+}
+
+.admin-detail-message-block {
+  margin-top: 0.35rem;
+  padding: 0.8rem;
+  border-radius: 12px;
+  border: 1px solid rgba(18, 71, 42, 0.18);
+  background: rgba(235, 245, 237, 0.9);
+}
+
+.admin-detail-message-block p {
+  margin-top: 0.35rem;
+  white-space: pre-wrap;
+  color: #244434;
+}
+
 .site-footer {
   margin-top: 4rem;
   background: #11321d;
