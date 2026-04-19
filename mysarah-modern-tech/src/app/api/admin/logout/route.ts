@@ -12,7 +12,8 @@ export async function POST(request: Request) {
     return blocked;
   }
 
-  const response = NextResponse.redirect(new URL("/admin/login", request.url));
+  // Use 303 so the browser follows the redirect with GET after a POST logout submit.
+  const response = NextResponse.redirect(new URL("/admin/login", request.url), 303);
   response.cookies.set(authCookie.name, "", {
     ...authCookie.options,
     maxAge: 0,

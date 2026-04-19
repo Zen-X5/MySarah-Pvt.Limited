@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import AdminDashboardHeader from "@/app/admin/AdminDashboardHeader";
 import AdminLeadsTable from "@/components/admin/AdminLeadsTable";
 
-type AdminView = "forms" | "traffic";
+type AdminView = "forms" | "requests" | "traffic";
 
 function TrafficCheatSheet() {
   const [loading, setLoading] = useState(true);
@@ -135,6 +135,13 @@ export default function AdminDashboardShell() {
           </button>
           <button
             type="button"
+            className={activeView === "requests" ? "admin-sidebar-link is-active" : "admin-sidebar-link"}
+            onClick={() => setActiveView("requests")}
+          >
+            Contact Requests
+          </button>
+          <button
+            type="button"
             className={activeView === "traffic" ? "admin-sidebar-link is-active" : "admin-sidebar-link"}
             onClick={() => setActiveView("traffic")}
           >
@@ -143,7 +150,9 @@ export default function AdminDashboardShell() {
         </aside>
 
         <section className="admin-content-panel">
-          {activeView === "forms" ? <AdminLeadsTable /> : <TrafficCheatSheet />}
+          {activeView === "forms" ? <AdminLeadsTable /> : null}
+          {activeView === "requests" ? <AdminLeadsTable mode="requests" /> : null}
+          {activeView === "traffic" ? <TrafficCheatSheet /> : null}
         </section>
       </div>
     </div>
