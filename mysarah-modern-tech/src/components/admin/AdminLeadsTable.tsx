@@ -6,7 +6,11 @@ import { useTranslation } from "react-i18next";
 import type { LeadProgressUpdate, LeadRecord } from "@/types/lead";
 import StatusPopup from "@/components/shared/StatusPopup";
 
-export default function AdminLeadsTable() {
+interface AdminLeadsTableProps {
+  mode?: "all" | "requests";
+}
+
+export default function AdminLeadsTable({ mode = "all" }: AdminLeadsTableProps) {
   const { t } = useTranslation();
   const [leads, setLeads] = useState<LeadRecord[]>([]);
   const [loading, setLoading] = useState(true);
@@ -15,6 +19,7 @@ export default function AdminLeadsTable() {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<"all" | LeadRecord["status"]>("all");
   const [progressFilter, setProgressFilter] = useState<"all" | "visit-pending" | "visit-confirmed" | "installed">("all");
+  const isRequestsView = mode === "requests";
 
   const loadLeads = useCallback(async () => {
     setLoading(true);
@@ -39,14 +44,18 @@ export default function AdminLeadsTable() {
     loadLeads();
   }, []);
 
+  const scopedLeads = isRequestsView
+    ? leads.filter((lead) => lead.type === "contact")
+    : leads;
+
   const totals = {
-    all: leads.length,
-    installed: leads.filter((lead) => lead.installationCompleted).length,
-    visitConfirmed: leads.filter((lead) => lead.visitConfirmed).length,
-    openPipeline: leads.filter((lead) => !lead.installationCompleted).length,
+    all: scopedLeads.length,
+    installed: scopedLeads.filter((lead) => lead.installationCompleted).length,
+    visitConfirmed: scopedLeads.filter((lead) => lead.visitConfirmed).length,
+    openPipeline: scopedLeads.filter((lead) => !lead.installationCompleted).length,
   };
 
-  const filteredLeads = leads.filter((lead) => {
+  const filteredLeads = scopedLeads.filter((lead) => {
     const normalizedQuery = searchTerm.trim().toLowerCase();
     const matchesQuery =
       normalizedQuery.length === 0 ||
@@ -93,6 +102,16 @@ export default function AdminLeadsTable() {
   }
 
   async function removeLead(id: string) {
+    const confirmed = window.confirm(
+      isRequestsView
+        ? "Mark this request as resolved and permanently delete it from the database?"
+        : "Delete this lead permanently from the database?",
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
     setNotice(null);
     try {
       const response = await fetch(`/api/admin/leads/${id}`, { method: "DELETE" });
@@ -101,16 +120,21 @@ export default function AdminLeadsTable() {
       if (!response.ok) {
         const fieldMessages = data.fieldErrors ? Object.values(data.fieldErrors).flat().join(" ") : "";
         setNotice({
-          message: [data.error || t("admin.leads.deleteError"), fieldMessages].filter(Boolean).join(" "),
+          message: [
+            data.error || (isRequestsView ? "Unable to resolve request." : t("admin.leads.deleteError")),
+            fieldMessages,
+          ]
+            .filter(Boolean)
+            .join(" "),
           tone: "error",
         });
         return;
       }
 
       await loadLeads();
-      setNotice({ message: t("admin.leads.deleted"), tone: "success" });
+      setNotice({ message: isRequestsView ? "Request resolved and removed." : t("admin.leads.deleted"), tone: "success" });
     } catch {
-      setNotice({ message: t("admin.leads.deleteError"), tone: "error" });
+      setNotice({ message: isRequestsView ? "Unable to resolve request." : t("admin.leads.deleteError"), tone: "error" });
     }
   }
 
@@ -122,8 +146,8 @@ export default function AdminLeadsTable() {
     return <p>{error}</p>;
   }
 
-  if (leads.length === 0) {
-    return <p>{t("admin.leads.none")}</p>;
+  if (scopedLeads.length === 0) {
+    return <p>{isRequestsView ? "No contact requests found." : t("admin.leads.none")}</p>;
   }
 
   return (
@@ -131,21 +155,30 @@ export default function AdminLeadsTable() {
       {notice ? <StatusPopup message={notice.message} tone={notice.tone} onClose={() => setNotice(null)} /> : null}
       <section className="admin-kpi-grid" aria-label="Lead overview">
         <article className="admin-kpi-card">
-          <p>{t("admin.leads.kpi.total")}</p>
+          <p>{isRequestsView ? "Total Requests" : t("admin.leads.kpi.total")}</p>
           <strong>{totals.all}</strong>
         </article>
-        <article className="admin-kpi-card">
-          <p>{t("admin.leads.kpi.installed")}</p>
-          <strong>{totals.installed}</strong>
-        </article>
-        <article className="admin-kpi-card">
-          <p>{t("admin.leads.kpi.visitConfirmed")}</p>
-          <strong>{totals.visitConfirmed}</strong>
-        </article>
-        <article className="admin-kpi-card">
-          <p>{t("admin.leads.kpi.openPipeline")}</p>
-          <strong>{totals.openPipeline}</strong>
-        </article>
+        {isRequestsView ? (
+          <article className="admin-kpi-card">
+            <p>Open Requests</p>
+            <strong>{scopedLeads.filter((lead) => lead.status !== "closed").length}</strong>
+          </article>
+        ) : (
+          <>
+            <article className="admin-kpi-card">
+              <p>{t("admin.leads.kpi.installed")}</p>
+              <strong>{totals.installed}</strong>
+            </article>
+            <article className="admin-kpi-card">
+              <p>{t("admin.leads.kpi.visitConfirmed")}</p>
+              <strong>{totals.visitConfirmed}</strong>
+            </article>
+            <article className="admin-kpi-card">
+              <p>{t("admin.leads.kpi.openPipeline")}</p>
+              <strong>{totals.openPipeline}</strong>
+            </article>
+          </>
+        )}
       </section>
 
       <section className="admin-toolbar" aria-label="Lead filters">
@@ -169,20 +202,22 @@ export default function AdminLeadsTable() {
             <option value="closed">{t("admin.leads.option.closed")}</option>
           </select>
         </label>
-        <label>
-          {t("admin.leads.filter.progress")}
-          <select
-            value={progressFilter}
-            onChange={(event) =>
-              setProgressFilter(event.target.value as "all" | "visit-pending" | "visit-confirmed" | "installed")
-            }
-          >
-            <option value="all">{t("admin.leads.option.all")}</option>
-            <option value="visit-pending">{t("admin.leads.option.visitPending")}</option>
-            <option value="visit-confirmed">{t("admin.leads.option.visitConfirmed")}</option>
-            <option value="installed">{t("admin.leads.option.installed")}</option>
-          </select>
-        </label>
+        {!isRequestsView ? (
+          <label>
+            {t("admin.leads.filter.progress")}
+            <select
+              value={progressFilter}
+              onChange={(event) =>
+                setProgressFilter(event.target.value as "all" | "visit-pending" | "visit-confirmed" | "installed")
+              }
+            >
+              <option value="all">{t("admin.leads.option.all")}</option>
+              <option value="visit-pending">{t("admin.leads.option.visitPending")}</option>
+              <option value="visit-confirmed">{t("admin.leads.option.visitConfirmed")}</option>
+              <option value="installed">{t("admin.leads.option.installed")}</option>
+            </select>
+          </label>
+        ) : null}
         <button type="button" className="button button-outline" onClick={loadLeads}>
           {t("admin.leads.refresh")}
         </button>
@@ -195,9 +230,9 @@ export default function AdminLeadsTable() {
               <th>{t("Name")}</th>
               <th>{t("Phone")}</th>
               <th>{t("Location")}</th>
-              <th>{t("admin.leads.type")}</th>
+              {!isRequestsView ? <th>{t("admin.leads.type")}</th> : null}
               <th>{t("admin.leads.date")}</th>
-              <th>{t("admin.leads.workflow")}</th>
+              {!isRequestsView ? <th>{t("admin.leads.workflow")}</th> : null}
               <th>{t("admin.leads.actions")}</th>
             </tr>
           </thead>
@@ -211,45 +246,51 @@ export default function AdminLeadsTable() {
                 </td>
                 <td data-label={t("Phone")}>{lead.phone}</td>
                 <td data-label={t("Location")}>{lead.location}</td>
-                <td data-label={t("admin.leads.type")}>{lead.type}</td>
+                {!isRequestsView ? <td data-label={t("admin.leads.type")}>{lead.type}</td> : null}
                 <td data-label={t("admin.leads.date")}>{new Date(lead.createdAt).toLocaleDateString()}</td>
-                <td data-label={t("admin.leads.workflow")}>
-                  <div className="workflow-steps">
-                    <button
-                      type="button"
-                      className={`workflow-step ${lead.visitConfirmed ? "workflow-step-done" : ""}`}
-                      onClick={() => {
-                        const nextVisitConfirmed = !lead.visitConfirmed;
-                        updateLead(lead._id, {
-                          visitConfirmed: nextVisitConfirmed,
-                          installationCompleted: nextVisitConfirmed ? lead.installationCompleted : false,
-                        });
-                      }}
-                    >
-                      {lead.visitConfirmed ? "✓" : "○"} {t("admin.leads.option.visitConfirmed")}
-                    </button>
-                    <button
-                      type="button"
-                      className={`workflow-step ${lead.installationCompleted ? "workflow-step-done" : ""}`}
-                      onClick={() =>
-                        updateLead(lead._id, {
-                          visitConfirmed: true,
-                          installationCompleted: !lead.installationCompleted,
-                        })
-                      }
-                    >
-                      {lead.installationCompleted ? "✓" : "○"} {t("admin.leads.option.installed")}
-                    </button>
-                  </div>
-                </td>
+                {!isRequestsView ? (
+                  <td data-label={t("admin.leads.workflow")}>
+                    <div className="workflow-steps">
+                      <button
+                        type="button"
+                        className={`workflow-step ${lead.visitConfirmed ? "workflow-step-done" : ""}`}
+                        onClick={() => {
+                          const nextVisitConfirmed = !lead.visitConfirmed;
+                          updateLead(lead._id, {
+                            visitConfirmed: nextVisitConfirmed,
+                            installationCompleted: nextVisitConfirmed ? lead.installationCompleted : false,
+                          });
+                        }}
+                      >
+                        {lead.visitConfirmed ? "✓" : "○"} {t("admin.leads.option.visitConfirmed")}
+                      </button>
+                      <button
+                        type="button"
+                        className={`workflow-step ${lead.installationCompleted ? "workflow-step-done" : ""}`}
+                        onClick={() =>
+                          updateLead(lead._id, {
+                            visitConfirmed: true,
+                            installationCompleted: !lead.installationCompleted,
+                          })
+                        }
+                      >
+                        {lead.installationCompleted ? "✓" : "○"} {t("admin.leads.option.installed")}
+                      </button>
+                    </div>
+                  </td>
+                ) : null}
                 <td data-label={t("admin.leads.actions")}>
                   <div className="table-actions">
                     <span className={`admin-status-badge admin-status-${lead.status}`}>{lead.status}</span>
                     <Link className="button button-outline" href={`/admin/leads/${lead._id}`}>
                       {t("admin.leads.view")}
                     </Link>
-                    <button type="button" className="button button-danger" onClick={() => removeLead(lead._id)}>
-                      {t("admin.leads.delete")}
+                    <button
+                      type="button"
+                      className={isRequestsView ? "button" : "button button-danger"}
+                      onClick={() => removeLead(lead._id)}
+                    >
+                      {isRequestsView ? "Mark as Resolved" : t("admin.leads.delete")}
                     </button>
                   </div>
                 </td>

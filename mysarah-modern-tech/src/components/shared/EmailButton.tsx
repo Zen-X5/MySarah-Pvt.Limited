@@ -6,14 +6,12 @@ import { useTranslation } from "react-i18next";
 
 export default function EmailButton() {
   const { t } = useTranslation();
-  const gmailComposeUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(company.email)}`;
+  const emailComposeUrl = `mailto:${encodeURIComponent(company.email)}`;
 
   return (
     <a
-      href={gmailComposeUrl}
+      href={emailComposeUrl}
       className="email-fab"
-      target="_blank"
-      rel="noopener noreferrer"
       onClick={() =>
         trackEvent("cta_click", {
           cta_channel: "email",
