@@ -1,5 +1,6 @@
 import { connectDb } from "@/lib/db";
-import { Lead } from "@/lib/models/Lead";
+import { ContactLead } from "@/lib/models/ContactLead";
+import { SolarLead } from "@/lib/models/SolarLead";
 import { SolarCounter } from "@/lib/models/SolarCounter";
 import type { LeadInput, LeadProgressUpdate, LeadStatus } from "@/types/lead";
 
@@ -39,16 +40,45 @@ async function ensureSolarCounter() {
 
 export async function createLead(input: LeadInput) {
   await connectDb();
-  return Lead.create({
+
+  if ((input.type || "contact") === "contact") {
+    return ContactLead.create({
+      ...input,
+      type: "contact",
+      attachments: input.attachments || [],
+    });
+  }
+
+  return SolarLead.create({
     ...input,
-    type: input.type || "contact",
+    type: input.type || "quote",
     attachments: input.attachments || [],
   });
 }
 
 export async function getLeads() {
   await connectDb();
-  return Lead.find(
+  return SolarLead.find(
+    {},
+    {
+      _id: 1,
+      name: 1,
+      phone: 1,
+      location: 1,
+      type: 1,
+      status: 1,
+      visitConfirmed: 1,
+      installationCompleted: 1,
+      createdAt: 1,
+    },
+  )
+    .sort({ createdAt: -1 })
+    .lean();
+}
+
+export async function getContactLeads() {
+  await connectDb();
+  return ContactLead.find(
     {},
     {
       _id: 1,
@@ -68,19 +98,19 @@ export async function getLeads() {
 
 export async function getLeadById(id: string) {
   await connectDb();
-  const lead = await Lead.findById(id).lean();
+  const lead = await SolarLead.findById(id).lean();
   return lead ? toPlainLead(lead) : null;
 }
 
 export async function updateLeadStatus(id: string, status: LeadStatus) {
   await connectDb();
-  return Lead.findByIdAndUpdate(id, { status }, { new: true }).lean();
+  return SolarLead.findByIdAndUpdate(id, { status }, { new: true }).lean();
 }
 
 export async function updateLeadProgress(id: string, update: LeadProgressUpdate) {
   await connectDb();
 
-  const current = await Lead.findById(id).lean();
+  const current = await SolarLead.findById(id).lean();
   if (!current) {
     return null;
   }
@@ -101,7 +131,7 @@ export async function updateLeadProgress(id: string, update: LeadProgressUpdate)
     ? current.installedAt || new Date()
     : null;
 
-  const updated = await Lead.findByIdAndUpdate(
+  const updated = await SolarLead.findByIdAndUpdate(
     id,
     {
       ...update,
@@ -134,9 +164,9 @@ export async function getSolarInsights() {
 
   const [counter, installedFromLeads, visitConfirmedFromLeads, pipelineOpenCount] = await Promise.all([
     ensureSolarCounter(),
-    Lead.countDocuments({ installationCompleted: true }),
-    Lead.countDocuments({ visitConfirmed: true }),
-    Lead.countDocuments({ installationCompleted: false }),
+    SolarLead.countDocuments({ installationCompleted: true }),
+    SolarLead.countDocuments({ visitConfirmed: true }),
+    SolarLead.countDocuments({ installationCompleted: false }),
   ]);
 
   const observedInstalled = HISTORICAL_BASELINE + installedFromLeads;
@@ -181,5 +211,10 @@ export async function getSolarInsights() {
 
 export async function deleteLead(id: string) {
   await connectDb();
-  return Lead.findByIdAndDelete(id).lean();
+  return SolarLead.findByIdAndDelete(id).lean();
+}
+
+export async function deleteContactLead(id: string) {
+  await connectDb();
+  return ContactLead.findByIdAndDelete(id).lean();
 }

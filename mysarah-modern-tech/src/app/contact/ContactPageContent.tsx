@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import { useTranslation } from "react-i18next";
+import FeedbackComplianceForm from "@/components/forms/FeedbackComplianceForm";
 import LeadForm from "@/components/forms/LeadForm";
 import SectionHeading from "@/components/shared/SectionHeading";
 import { company } from "@/lib/constants";
@@ -133,6 +134,10 @@ export default function ContactPageContent() {
               />
             </div>
           </aside>
+        </div>
+
+        <div className="contact-feedback-shell">
+          <FeedbackComplianceForm />
         </div>
       </section>
     </main>

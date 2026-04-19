@@ -7,10 +7,10 @@ import type { LeadProgressUpdate, LeadRecord } from "@/types/lead";
 import StatusPopup from "@/components/shared/StatusPopup";
 
 interface AdminLeadsTableProps {
-  mode?: "all" | "requests";
+  mode?: "solar" | "contact";
 }
 
-export default function AdminLeadsTable({ mode = "all" }: AdminLeadsTableProps) {
+export default function AdminLeadsTable({ mode = "solar" }: AdminLeadsTableProps) {
   const { t } = useTranslation();
   const [leads, setLeads] = useState<LeadRecord[]>([]);
   const [loading, setLoading] = useState(true);
@@ -19,13 +19,14 @@ export default function AdminLeadsTable({ mode = "all" }: AdminLeadsTableProps) 
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<"all" | LeadRecord["status"]>("all");
   const [progressFilter, setProgressFilter] = useState<"all" | "visit-pending" | "visit-confirmed" | "installed">("all");
-  const isRequestsView = mode === "requests";
+  const isContactView = mode === "contact";
+  const apiBasePath = isContactView ? "/api/admin/contacts" : "/api/admin/leads";
 
   const loadLeads = useCallback(async () => {
     setLoading(true);
     setError("");
     try {
-      const response = await fetch("/api/admin/leads", { method: "GET", cache: "no-store" });
+      const response = await fetch(apiBasePath, { method: "GET", cache: "no-store" });
       const data = await response.json();
       if (!response.ok) {
         const fieldMessages = data.fieldErrors ? Object.values(data.fieldErrors).flat().join(" ") : "";
@@ -38,24 +39,20 @@ export default function AdminLeadsTable({ mode = "all" }: AdminLeadsTableProps) 
     } finally {
       setLoading(false);
     }
-  }, [t]);
+  }, [apiBasePath, t]);
 
   useEffect(() => {
-    loadLeads();
-  }, []);
-
-  const scopedLeads = isRequestsView
-    ? leads.filter((lead) => lead.type === "contact")
-    : leads;
+    void loadLeads();
+  }, [loadLeads]);
 
   const totals = {
-    all: scopedLeads.length,
-    installed: scopedLeads.filter((lead) => lead.installationCompleted).length,
-    visitConfirmed: scopedLeads.filter((lead) => lead.visitConfirmed).length,
-    openPipeline: scopedLeads.filter((lead) => !lead.installationCompleted).length,
+    all: leads.length,
+    installed: leads.filter((lead) => lead.installationCompleted).length,
+    visitConfirmed: leads.filter((lead) => lead.visitConfirmed).length,
+    openPipeline: leads.filter((lead) => !lead.installationCompleted).length,
   };
 
-  const filteredLeads = scopedLeads.filter((lead) => {
+  const filteredLeads = leads.filter((lead) => {
     const normalizedQuery = searchTerm.trim().toLowerCase();
     const matchesQuery =
       normalizedQuery.length === 0 ||
@@ -71,10 +68,14 @@ export default function AdminLeadsTable({ mode = "all" }: AdminLeadsTableProps) 
       (progressFilter === "visit-confirmed" && lead.visitConfirmed && !lead.installationCompleted) ||
       (progressFilter === "installed" && lead.installationCompleted);
 
-    return matchesQuery && matchesStatus && matchesProgress;
+    return matchesQuery && matchesStatus && (isContactView ? true : matchesProgress);
   });
 
   async function updateLead(id: string, payload: LeadProgressUpdate) {
+    if (isContactView) {
+      return;
+    }
+
     setNotice(null);
     try {
       const response = await fetch(`/api/admin/leads/${id}`, {
@@ -103,7 +104,7 @@ export default function AdminLeadsTable({ mode = "all" }: AdminLeadsTableProps) 
 
   async function removeLead(id: string) {
     const confirmed = window.confirm(
-      isRequestsView
+      isContactView
         ? "Mark this request as resolved and permanently delete it from the database?"
         : "Delete this lead permanently from the database?",
     );
@@ -114,14 +115,14 @@ export default function AdminLeadsTable({ mode = "all" }: AdminLeadsTableProps) 
 
     setNotice(null);
     try {
-      const response = await fetch(`/api/admin/leads/${id}`, { method: "DELETE" });
+      const response = await fetch(`${apiBasePath}/${id}`, { method: "DELETE" });
       const data = await response.json();
 
       if (!response.ok) {
         const fieldMessages = data.fieldErrors ? Object.values(data.fieldErrors).flat().join(" ") : "";
         setNotice({
           message: [
-            data.error || (isRequestsView ? "Unable to resolve request." : t("admin.leads.deleteError")),
+            data.error || (isContactView ? "Unable to resolve request." : t("admin.leads.deleteError")),
             fieldMessages,
           ]
             .filter(Boolean)
@@ -132,9 +133,9 @@ export default function AdminLeadsTable({ mode = "all" }: AdminLeadsTableProps) 
       }
 
       await loadLeads();
-      setNotice({ message: isRequestsView ? "Request resolved and removed." : t("admin.leads.deleted"), tone: "success" });
+      setNotice({ message: isContactView ? "Request resolved and removed." : t("admin.leads.deleted"), tone: "success" });
     } catch {
-      setNotice({ message: isRequestsView ? "Unable to resolve request." : t("admin.leads.deleteError"), tone: "error" });
+      setNotice({ message: isContactView ? "Unable to resolve request." : t("admin.leads.deleteError"), tone: "error" });
     }
   }
 
@@ -146,8 +147,8 @@ export default function AdminLeadsTable({ mode = "all" }: AdminLeadsTableProps) 
     return <p>{error}</p>;
   }
 
-  if (scopedLeads.length === 0) {
-    return <p>{isRequestsView ? "No contact requests found." : t("admin.leads.none")}</p>;
+  if (leads.length === 0) {
+    return <p>{isContactView ? "No contact form submissions found." : "No solar installation form submissions found."}</p>;
   }
 
   return (
@@ -155,13 +156,13 @@ export default function AdminLeadsTable({ mode = "all" }: AdminLeadsTableProps) 
       {notice ? <StatusPopup message={notice.message} tone={notice.tone} onClose={() => setNotice(null)} /> : null}
       <section className="admin-kpi-grid" aria-label="Lead overview">
         <article className="admin-kpi-card">
-          <p>{isRequestsView ? "Total Requests" : t("admin.leads.kpi.total")}</p>
+          <p>{isContactView ? "Total Contact Us Forms" : "Total Solar Installation Forms"}</p>
           <strong>{totals.all}</strong>
         </article>
-        {isRequestsView ? (
+        {isContactView ? (
           <article className="admin-kpi-card">
             <p>Open Requests</p>
-            <strong>{scopedLeads.filter((lead) => lead.status !== "closed").length}</strong>
+            <strong>{leads.filter((lead) => lead.status !== "closed").length}</strong>
           </article>
         ) : (
           <>
@@ -202,7 +203,7 @@ export default function AdminLeadsTable({ mode = "all" }: AdminLeadsTableProps) 
             <option value="closed">{t("admin.leads.option.closed")}</option>
           </select>
         </label>
-        {!isRequestsView ? (
+        {!isContactView ? (
           <label>
             {t("admin.leads.filter.progress")}
             <select
@@ -230,9 +231,9 @@ export default function AdminLeadsTable({ mode = "all" }: AdminLeadsTableProps) 
               <th>{t("Name")}</th>
               <th>{t("Phone")}</th>
               <th>{t("Location")}</th>
-              {!isRequestsView ? <th>{t("admin.leads.type")}</th> : null}
+              {!isContactView ? <th>{t("admin.leads.type")}</th> : null}
               <th>{t("admin.leads.date")}</th>
-              {!isRequestsView ? <th>{t("admin.leads.workflow")}</th> : null}
+              {!isContactView ? <th>{t("admin.leads.workflow")}</th> : null}
               <th>{t("admin.leads.actions")}</th>
             </tr>
           </thead>
@@ -246,9 +247,9 @@ export default function AdminLeadsTable({ mode = "all" }: AdminLeadsTableProps) 
                 </td>
                 <td data-label={t("Phone")}>{lead.phone}</td>
                 <td data-label={t("Location")}>{lead.location}</td>
-                {!isRequestsView ? <td data-label={t("admin.leads.type")}>{lead.type}</td> : null}
+                {!isContactView ? <td data-label={t("admin.leads.type")}>{lead.type}</td> : null}
                 <td data-label={t("admin.leads.date")}>{new Date(lead.createdAt).toLocaleDateString()}</td>
-                {!isRequestsView ? (
+                {!isContactView ? (
                   <td data-label={t("admin.leads.workflow")}>
                     <div className="workflow-steps">
                       <button
@@ -282,15 +283,17 @@ export default function AdminLeadsTable({ mode = "all" }: AdminLeadsTableProps) 
                 <td data-label={t("admin.leads.actions")}>
                   <div className="table-actions">
                     <span className={`admin-status-badge admin-status-${lead.status}`}>{lead.status}</span>
-                    <Link className="button button-outline" href={`/admin/leads/${lead._id}`}>
-                      {t("admin.leads.view")}
-                    </Link>
+                    {!isContactView ? (
+                      <Link className="button button-outline" href={`/admin/leads/${lead._id}`}>
+                        {t("admin.leads.view")}
+                      </Link>
+                    ) : null}
                     <button
                       type="button"
-                      className={isRequestsView ? "button" : "button button-danger"}
+                      className={isContactView ? "button" : "button button-danger"}
                       onClick={() => removeLead(lead._id)}
                     >
-                      {isRequestsView ? "Mark as Resolved" : t("admin.leads.delete")}
+                      {isContactView ? "Mark as Resolved" : t("admin.leads.delete")}
                     </button>
                   </div>
                 </td>
