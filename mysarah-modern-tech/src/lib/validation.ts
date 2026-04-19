@@ -16,6 +16,29 @@ export const leadSchema = z.object({
   attachments: z.array(leadAttachmentSchema).max(20, "Too many attachments.").default([]),
 });
 
+export const feedbackComplianceSchema = z.object({
+  name: z
+    .string()
+    .trim()
+    .min(2, "Name must be at least 2 characters.")
+    .max(80, "Name is too long.")
+    .regex(/^[A-Za-z0-9 .,'-]+$/, "Name contains invalid characters."),
+  email: z.string().trim().email("Enter a valid email.").max(120, "Email is too long."),
+  phone: z
+    .string()
+    .trim()
+    .max(20, "Phone number is too long.")
+    .regex(/^[0-9+\- ()]*$/, "Phone number contains invalid characters.")
+    .optional()
+    .default(""),
+  category: z.enum(["feedback", "compliance", "grievance", "suggestion"]),
+  message: z
+    .string()
+    .trim()
+    .min(10, "Message must be at least 10 characters.")
+    .max(1500, "Message is too long."),
+});
+
 export const adminLoginSchema = z.object({
   username: z.string().trim().min(3, "Username is too short.").max(40, "Username is too long."),
   password: z.string().min(6, "Password must be at least 6 characters.").max(200, "Password is too long."),

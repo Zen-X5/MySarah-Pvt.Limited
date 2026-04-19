@@ -1152,6 +1152,19 @@ a {
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
+.contact-feedback-shell {
+  margin-top: 1.1rem;
+}
+
+.contact-feedback-card {
+  max-width: 720px;
+}
+
+.contact-feedback-subtitle {
+  color: var(--muted);
+  margin-bottom: 0.75rem;
+}
+
 .contact-page {
   padding-bottom: 2rem;
 }

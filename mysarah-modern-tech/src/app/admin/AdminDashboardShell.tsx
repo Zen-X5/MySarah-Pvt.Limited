@@ -2,9 +2,10 @@
 
 import { useEffect, useState } from "react";
 import AdminDashboardHeader from "@/app/admin/AdminDashboardHeader";
+import AdminFeedbackComplianceTable from "@/components/admin/AdminFeedbackComplianceTable";
 import AdminLeadsTable from "@/components/admin/AdminLeadsTable";
 
-type AdminView = "forms" | "requests" | "traffic";
+type AdminView = "solar" | "contact" | "feedback" | "traffic";
 
 function TrafficCheatSheet() {
   const [loading, setLoading] = useState(true);
@@ -116,7 +117,7 @@ function TrafficCheatSheet() {
 }
 
 export default function AdminDashboardShell() {
-  const [activeView, setActiveView] = useState<AdminView>("forms");
+  const [activeView, setActiveView] = useState<AdminView>("solar");
 
   return (
     <div className="admin-dashboard-shell">
@@ -128,17 +129,24 @@ export default function AdminDashboardShell() {
         <aside className="admin-sidebar" aria-label="Admin sections">
           <button
             type="button"
-            className={activeView === "forms" ? "admin-sidebar-link is-active" : "admin-sidebar-link"}
-            onClick={() => setActiveView("forms")}
+            className={activeView === "solar" ? "admin-sidebar-link is-active" : "admin-sidebar-link"}
+            onClick={() => setActiveView("solar")}
           >
-            Forms and Leads
+            Solar Installation Forms
           </button>
           <button
             type="button"
-            className={activeView === "requests" ? "admin-sidebar-link is-active" : "admin-sidebar-link"}
-            onClick={() => setActiveView("requests")}
+            className={activeView === "contact" ? "admin-sidebar-link is-active" : "admin-sidebar-link"}
+            onClick={() => setActiveView("contact")}
           >
-            Contact Requests
+            Contact Us Forms
+          </button>
+          <button
+            type="button"
+            className={activeView === "feedback" ? "admin-sidebar-link is-active" : "admin-sidebar-link"}
+            onClick={() => setActiveView("feedback")}
+          >
+            Feedback and Compliance
           </button>
           <button
             type="button"
@@ -150,8 +158,9 @@ export default function AdminDashboardShell() {
         </aside>
 
         <section className="admin-content-panel">
-          {activeView === "forms" ? <AdminLeadsTable /> : null}
-          {activeView === "requests" ? <AdminLeadsTable mode="requests" /> : null}
+          {activeView === "solar" ? <AdminLeadsTable mode="solar" /> : null}
+          {activeView === "contact" ? <AdminLeadsTable mode="contact" /> : null}
+          {activeView === "feedback" ? <AdminFeedbackComplianceTable /> : null}
           {activeView === "traffic" ? <TrafficCheatSheet /> : null}
         </section>
       </div>
