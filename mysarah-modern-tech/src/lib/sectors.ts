@@ -59,7 +59,7 @@ export const sectors: Sector[] = [
     subtitle: "Technology-backed farm growth programs",
     description: "Agriculture initiatives focused on productivity, supply quality, and sustainable field operations.",
     active: false,
-    heroImage: "/images/agriculture.png",
+    heroImage: "/videos/about.mp4",
     category: "agriculture",
   },
   {
